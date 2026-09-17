@@ -219,6 +219,130 @@ registerButton.addEventListener(
 
 async function register() {
 
+    const email = registerEmail.value.trim();
+    const username = registerUsername.value.trim();
+    const password = registerPassword.value;
+
+    if (!email) {
+        showAuthMessage(
+            "Escribe tu correo electrónico.",
+            true
+        );
+        return;
+    }
+
+    if (!username) {
+        showAuthMessage(
+            "Escribe un nombre de usuario.",
+            true
+        );
+        return;
+    }
+
+    if (!password) {
+        showAuthMessage(
+            "Escribe una contraseña.",
+            true
+        );
+        return;
+    }
+
+    if (username.length < 3) {
+        showAuthMessage(
+            "El usuario debe tener al menos 3 caracteres.",
+            true
+        );
+        return;
+    }
+
+    if (password.length < 6) {
+        showAuthMessage(
+            "La contraseña debe tener al menos 6 caracteres.",
+            true
+        );
+        return;
+    }
+
+    registerButton.disabled = true;
+
+    showAuthMessage("Creando cuenta...");
+
+    try {
+
+        console.log("1. Creando usuario en Authentication...");
+
+        const userCredential =
+            await createUserWithEmailAndPassword(
+                auth,
+                email,
+                password
+            );
+
+        console.log("2. Authentication OK");
+
+        const user = userCredential.user;
+
+        const usernameLower =
+            username.toLowerCase();
+
+        console.log("3. Guardando perfil en Firestore...");
+
+        await setDoc(
+            doc(
+                db,
+                "users",
+                user.uid
+            ),
+            {
+                username: username,
+                usernameLower: usernameLower,
+                email: email,
+                createdAt: serverTimestamp()
+            }
+        );
+
+        console.log("4. Firestore OK");
+
+        showAuthMessage(
+            "¡Cuenta creada correctamente!"
+        );
+
+        registerEmail.value = "";
+        registerUsername.value = "";
+        registerPassword.value = "";
+
+    } catch (error) {
+
+        console.error(
+            "ERROR FIREBASE:",
+            error
+        );
+
+        console.error(
+            "CÓDIGO:",
+            error.code
+        );
+
+        console.error(
+            "MENSAJE:",
+            error.message
+        );
+
+        showAuthMessage(
+            "Error: " +
+            error.code +
+            " - " +
+            error.message,
+            true
+        );
+
+    } finally {
+
+        registerButton.disabled = false;
+
+    }
+}
+
     const email =
         registerEmail.value.trim();
 
