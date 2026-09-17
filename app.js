@@ -24,6 +24,10 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
 
+/* =========================================================
+   FIREBASE
+   ========================================================= */
+
 const firebaseConfig = {
     apiKey: "AIzaSyAQkoJ1NZ05MSHAkP2JXQlNkhg14uIulps",
     authDomain: "chat-44405.firebaseapp.com",
@@ -35,110 +39,240 @@ const firebaseConfig = {
 };
 
 
-const app = initializeApp(firebaseConfig);
+const firebaseApp = initializeApp(firebaseConfig);
 
-const auth = getAuth(app);
-const db = getFirestore(app);
+const auth = getAuth(firebaseApp);
 
+const db = getFirestore(firebaseApp);
+
+
+/* =========================================================
+   VARIABLES
+   ========================================================= */
 
 let currentUser = null;
+
 let currentProfile = null;
+
 let currentConversationId = null;
+
 let currentOtherUser = null;
 
 let unsubscribeMessages = null;
+
 let unsubscribeConversations = null;
 
 
-const authScreen = document.getElementById("authScreen");
-const appScreen = document.getElementById("app");
+/* =========================================================
+   ELEMENTOS HTML
+   ========================================================= */
 
-const loginForm = document.getElementById("loginForm");
-const registerForm = document.getElementById("registerForm");
+const authScreen =
+    document.getElementById("authScreen");
 
-const loginEmail = document.getElementById("loginEmail");
-const loginPassword = document.getElementById("loginPassword");
+const appScreen =
+    document.getElementById("app");
 
-const registerEmail = document.getElementById("registerEmail");
-const registerUsername = document.getElementById("registerUsername");
-const registerPassword = document.getElementById("registerPassword");
 
-const loginButton = document.getElementById("loginButton");
-const registerButton = document.getElementById("registerButton");
+const loginForm =
+    document.getElementById("loginForm");
 
-const showRegister = document.getElementById("showRegister");
-const showLogin = document.getElementById("showLogin");
+const registerForm =
+    document.getElementById("registerForm");
 
-const authMessage = document.getElementById("authMessage");
 
-const logoutButton = document.getElementById("logoutButton");
+const loginEmail =
+    document.getElementById("loginEmail");
 
-const currentUserElement = document.getElementById("currentUser");
+const loginPassword =
+    document.getElementById("loginPassword");
 
-const userSearch = document.getElementById("userSearch");
-const searchResults = document.getElementById("searchResults");
 
-const chatList = document.getElementById("chatList");
+const registerEmail =
+    document.getElementById("registerEmail");
 
-const welcome = document.getElementById("welcome");
-const chatWindow = document.getElementById("chatWindow");
+const registerUsername =
+    document.getElementById("registerUsername");
 
-const chatTitle = document.getElementById("chatTitle");
-const chatStatus = document.getElementById("chatStatus");
+const registerPassword =
+    document.getElementById("registerPassword");
 
-const messages = document.getElementById("messages");
 
-const messageInput = document.getElementById("messageInput");
-const sendButton = document.getElementById("sendButton");
+const loginButton =
+    document.getElementById("loginButton");
 
+const registerButton =
+    document.getElementById("registerButton");
+
+
+const showRegister =
+    document.getElementById("showRegister");
+
+const showLogin =
+    document.getElementById("showLogin");
+
+
+const authMessage =
+    document.getElementById("authMessage");
+
+
+const logoutButton =
+    document.getElementById("logoutButton");
+
+
+const currentUserElement =
+    document.getElementById("currentUser");
+
+
+const userSearch =
+    document.getElementById("userSearch");
+
+
+const searchResults =
+    document.getElementById("searchResults");
+
+
+const chatList =
+    document.getElementById("chatList");
+
+
+const welcome =
+    document.getElementById("welcome");
+
+
+const chatWindow =
+    document.getElementById("chatWindow");
+
+
+const chatTitle =
+    document.getElementById("chatTitle");
+
+
+const chatStatus =
+    document.getElementById("chatStatus");
+
+
+const messages =
+    document.getElementById("messages");
+
+
+const messageInput =
+    document.getElementById("messageInput");
+
+
+const sendButton =
+    document.getElementById("sendButton");
+
+
+/* =========================================================
+   CAMBIAR LOGIN / REGISTRO
+   ========================================================= */
+
+showRegister.addEventListener("click", function () {
+
+    loginForm.classList.add("hidden");
+
+    registerForm.classList.remove("hidden");
+
+    authMessage.textContent = "";
+
+});
+
+
+showLogin.addEventListener("click", function () {
+
+    registerForm.classList.add("hidden");
+
+    loginForm.classList.remove("hidden");
+
+    authMessage.textContent = "";
+
+});
+
+
+/* =========================================================
+   MENSAJES DE AUTENTICACIÓN
+   ========================================================= */
 
 function showAuthMessage(message, error = false) {
 
     authMessage.textContent = message;
 
-    authMessage.style.color = error ? "#ff4d4d" : "#4caf50";
+    if (error) {
+
+        authMessage.style.color = "#ff4444";
+
+    } else {
+
+        authMessage.style.color = "#4caf50";
+
+    }
+
 }
 
 
-showRegister.addEventListener("click", () => {
+/* =========================================================
+   REGISTRAR CUENTA
+   ========================================================= */
 
-    loginForm.classList.add("hidden");
-    registerForm.classList.remove("hidden");
-
-    authMessage.textContent = "";
-});
+registerButton.addEventListener("click", register);
 
 
-showLogin.addEventListener("click", () => {
+async function register() {
 
-    registerForm.classList.add("hidden");
-    loginForm.classList.remove("hidden");
+    const email =
+        registerEmail.value.trim();
 
-    authMessage.textContent = "";
-});
+    const username =
+        registerUsername.value.trim();
+
+    const password =
+        registerPassword.value;
 
 
-registerButton.addEventListener("click", async () => {
-
-    const email = registerEmail.value.trim();
-    const username = registerUsername.value.trim();
-    const password = registerPassword.value;
-
-    if (!email || !username || !password) {
-
-        showAuthMessage("Completa todos los campos.", true);
-        return;
-    }
-
-    if (username.length < 3) {
+    if (!email) {
 
         showAuthMessage(
-            "El nombre de usuario debe tener al menos 3 caracteres.",
+            "Escribe tu correo electrónico.",
             true
         );
 
         return;
     }
+
+
+    if (!username) {
+
+        showAuthMessage(
+            "Escribe un nombre de usuario.",
+            true
+        );
+
+        return;
+    }
+
+
+    if (!password) {
+
+        showAuthMessage(
+            "Escribe una contraseña.",
+            true
+        );
+
+        return;
+    }
+
+
+    if (username.length < 3) {
+
+        showAuthMessage(
+            "El usuario debe tener al menos 3 caracteres.",
+            true
+        );
+
+        return;
+    }
+
 
     if (password.length < 6) {
 
@@ -150,20 +284,37 @@ registerButton.addEventListener("click", async () => {
         return;
     }
 
+
     registerButton.disabled = true;
+
+    showAuthMessage(
+        "Creando cuenta..."
+    );
+
 
     try {
 
-        const usernameLower = username.toLowerCase();
+        const usernameLower =
+            username.toLowerCase();
+
+
+        /* COMPROBAR SI EL USUARIO EXISTE */
 
         const usernameQuery = query(
             collection(db, "users"),
-            where("usernameLower", "==", usernameLower)
+            where(
+                "usernameLower",
+                "==",
+                usernameLower
+            )
         );
 
-        const usernameResult = await getDocs(usernameQuery);
 
-        if (!usernameResult.empty) {
+        const usernameSnapshot =
+            await getDocs(usernameQuery);
+
+
+        if (!usernameSnapshot.empty) {
 
             showAuthMessage(
                 "Ese nombre de usuario ya está ocupado.",
@@ -171,9 +322,12 @@ registerButton.addEventListener("click", async () => {
             );
 
             registerButton.disabled = false;
+
             return;
         }
 
+
+        /* CREAR CUENTA EN FIREBASE AUTH */
 
         const userCredential =
             await createUserWithEmailAndPassword(
@@ -183,60 +337,161 @@ registerButton.addEventListener("click", async () => {
             );
 
 
-        const user = userCredential.user;
+        const user =
+            userCredential.user;
 
+
+        /* CREAR PERFIL EN FIRESTORE */
 
         await setDoc(
             doc(db, "users", user.uid),
             {
                 username: username,
+
                 usernameLower: usernameLower,
+
                 email: email,
+
                 createdAt: serverTimestamp()
             }
         );
 
 
-        showAuthMessage("Cuenta creada correctamente.");
+        showAuthMessage(
+            "Cuenta creada correctamente."
+        );
+
+
+        registerEmail.value = "";
+
+        registerUsername.value = "";
+
+        registerPassword.value = "";
+
 
     } catch (error) {
 
-    console.error("ERROR FIREBASE:", error);
-    console.error("Código:", error.code);
-    console.error("Mensaje:", error.message);
+        console.error(
+            "ERROR FIREBASE:",
+            error
+        );
 
-    let message =
-        "Error: " + error.code + " - " + error.message;
 
-    showAuthMessage(message, true);
+        console.error(
+            "CÓDIGO:",
+            error.code
+        );
 
-} finally {
 
-        if (error.code === "auth/email-already-in-use") {
-            message = "Ese correo ya está registrado.";
+        console.error(
+            "MENSAJE:",
+            error.message
+        );
+
+
+        let message =
+            "No se pudo crear la cuenta.";
+
+
+        if (
+            error.code ===
+            "auth/email-already-in-use"
+        ) {
+
+            message =
+                "Ese correo ya está registrado.";
+
         }
 
-        if (error.code === "auth/invalid-email") {
-            message = "El correo no es válido.";
+
+        else if (
+            error.code ===
+            "auth/invalid-email"
+        ) {
+
+            message =
+                "El correo electrónico no es válido.";
+
         }
 
-        if (error.code === "auth/weak-password") {
-            message = "La contraseña es demasiado débil.";
+
+        else if (
+            error.code ===
+            "auth/weak-password"
+        ) {
+
+            message =
+                "La contraseña es demasiado débil.";
+
         }
 
-        showAuthMessage(message, true);
+
+        else if (
+            error.code ===
+            "auth/operation-not-allowed"
+        ) {
+
+            message =
+                "El inicio de sesión con correo y contraseña no está activado en Firebase.";
+
+        }
+
+
+        else if (
+            error.code ===
+            "permission-denied"
+        ) {
+
+            message =
+                "Firebase rechazó el acceso a Firestore. Hay que revisar las reglas.";
+
+        }
+
+
+        else {
+
+            message =
+                "Error: " +
+                error.code +
+                " - " +
+                error.message;
+
+        }
+
+
+        showAuthMessage(
+            message,
+            true
+        );
+
 
     } finally {
 
         registerButton.disabled = false;
+
     }
-});
+
+}
 
 
-loginButton.addEventListener("click", async () => {
+/* =========================================================
+   INICIAR SESIÓN
+   ========================================================= */
 
-    const email = loginEmail.value.trim();
-    const password = loginPassword.value;
+loginButton.addEventListener(
+    "click",
+    login
+);
+
+
+async function login() {
+
+    const email =
+        loginEmail.value.trim();
+
+    const password =
+        loginPassword.value;
+
 
     if (!email || !password) {
 
@@ -248,7 +503,14 @@ loginButton.addEventListener("click", async () => {
         return;
     }
 
+
     loginButton.disabled = true;
+
+
+    showAuthMessage(
+        "Iniciando sesión..."
+    );
+
 
     try {
 
@@ -258,107 +520,209 @@ loginButton.addEventListener("click", async () => {
             password
         );
 
+
     } catch (error) {
 
         console.error(error);
 
-        let message = "No se pudo iniciar sesión.";
+
+        let message =
+            "No se pudo iniciar sesión.";
+
 
         if (
-            error.code === "auth/invalid-credential" ||
-            error.code === "auth/wrong-password" ||
-            error.code === "auth/user-not-found"
+            error.code ===
+                "auth/invalid-credential" ||
+            error.code ===
+                "auth/wrong-password" ||
+            error.code ===
+                "auth/user-not-found"
         ) {
-            message = "Correo o contraseña incorrectos.";
+
+            message =
+                "Correo o contraseña incorrectos.";
+
         }
 
-        showAuthMessage(message, true);
+
+        showAuthMessage(
+            message,
+            true
+        );
+
 
     } finally {
 
         loginButton.disabled = false;
-    }
-});
 
-
-logoutButton.addEventListener("click", async () => {
-
-    await signOut(auth);
-});
-
-
-onAuthStateChanged(auth, async (user) => {
-
-    if (!user) {
-
-        currentUser = null;
-        currentProfile = null;
-
-        authScreen.classList.remove("hidden");
-        appScreen.classList.add("hidden");
-
-        if (unsubscribeMessages) {
-            unsubscribeMessages();
-            unsubscribeMessages = null;
-        }
-
-        if (unsubscribeConversations) {
-            unsubscribeConversations();
-            unsubscribeConversations = null;
-        }
-
-        return;
     }
 
-
-    currentUser = user;
-
-
-    const profileReference = doc(
-        db,
-        "users",
-        user.uid
-    );
-
-    const profileSnapshot =
-        await getDoc(profileReference);
+}
 
 
-    if (!profileSnapshot.exists()) {
+/* =========================================================
+   CERRAR SESIÓN
+   ========================================================= */
 
-        console.error("No existe el perfil del usuario.");
+logoutButton.addEventListener(
+    "click",
+    async function () {
 
         await signOut(auth);
-        return;
+
     }
+);
 
 
-    currentProfile = profileSnapshot.data();
+/* =========================================================
+   ESTADO DE AUTENTICACIÓN
+   ========================================================= */
+
+onAuthStateChanged(
+    auth,
+    async function (user) {
+
+        if (!user) {
+
+            currentUser = null;
+
+            currentProfile = null;
+
+            currentConversationId = null;
 
 
-    currentUserElement.textContent =
-        "@" + currentProfile.username;
+            authScreen.classList.remove(
+                "hidden"
+            );
 
 
-    authScreen.classList.add("hidden");
-    appScreen.classList.remove("hidden");
+            appScreen.classList.add(
+                "hidden"
+            );
 
 
-    loadConversations();
-});
+            if (unsubscribeMessages) {
+
+                unsubscribeMessages();
+
+                unsubscribeMessages = null;
+
+            }
 
 
-userSearch.addEventListener("input", async () => {
+            if (unsubscribeConversations) {
 
-    const search = userSearch.value.trim().toLowerCase();
+                unsubscribeConversations();
+
+                unsubscribeConversations = null;
+
+            }
+
+
+            return;
+        }
+
+
+        currentUser = user;
+
+
+        try {
+
+            const profileReference =
+                doc(
+                    db,
+                    "users",
+                    user.uid
+                );
+
+
+            const profileSnapshot =
+                await getDoc(
+                    profileReference
+                );
+
+
+            if (!profileSnapshot.exists()) {
+
+                console.error(
+                    "No existe el perfil del usuario."
+                );
+
+                await signOut(auth);
+
+                return;
+            }
+
+
+            currentProfile =
+                profileSnapshot.data();
+
+
+            currentUserElement.textContent =
+                "@" +
+                currentProfile.username;
+
+
+            authScreen.classList.add(
+                "hidden"
+            );
+
+
+            appScreen.classList.remove(
+                "hidden"
+            );
+
+
+            loadConversations();
+
+
+        } catch (error) {
+
+            console.error(
+                "Error cargando perfil:",
+                error
+            );
+
+            showAuthMessage(
+                error.message,
+                true
+            );
+
+        }
+
+    }
+);
+
+
+/* =========================================================
+   BUSCAR USUARIOS
+   ========================================================= */
+
+userSearch.addEventListener(
+    "input",
+    searchUsers
+);
+
+
+async function searchUsers() {
+
+    const search =
+        userSearch.value
+            .trim()
+            .toLowerCase();
+
 
     searchResults.innerHTML = "";
 
+
     if (!search) {
+
         return;
     }
 
+
     if (!currentUser) {
+
         return;
     }
 
@@ -366,87 +730,151 @@ userSearch.addEventListener("input", async () => {
     try {
 
         const usersSnapshot =
-            await getDocs(collection(db, "users"));
+            await getDocs(
+                collection(
+                    db,
+                    "users"
+                )
+            );
 
 
-        usersSnapshot.forEach((userDocument) => {
+        usersSnapshot.forEach(
+            function (userDocument) {
 
-            if (userDocument.id === currentUser.uid) {
-                return;
-            }
+                if (
+                    userDocument.id ===
+                    currentUser.uid
+                ) {
 
-
-            const user = userDocument.data();
-
-            const username =
-                user.username || "";
-
-
-            if (
-                username
-                    .toLowerCase()
-                    .includes(search)
-            ) {
-
-                const result =
-                    document.createElement("button");
-
-                result.className = "search-result";
-
-                result.textContent =
-                    "@" + username;
+                    return;
+                }
 
 
-                result.addEventListener("click", () => {
+                const user =
+                    userDocument.data();
 
-                    openConversation(
-                        userDocument.id,
-                        user
+
+                const username =
+                    user.username || "";
+
+
+                if (
+                    username
+                        .toLowerCase()
+                        .includes(search)
+                ) {
+
+                    const button =
+                        document.createElement(
+                            "button"
+                        );
+
+
+                    button.type = "button";
+
+                    button.className =
+                        "search-result";
+
+
+                    button.textContent =
+                        "@" +
+                        username;
+
+
+                    button.addEventListener(
+                        "click",
+                        function () {
+
+                            openConversation(
+                                userDocument.id,
+                                user
+                            );
+
+
+                            userSearch.value =
+                                "";
+
+
+                            searchResults.innerHTML =
+                                "";
+
+                        }
                     );
 
-                    userSearch.value = "";
-                    searchResults.innerHTML = "";
 
-                });
+                    searchResults.appendChild(
+                        button
+                    );
 
+                }
 
-                searchResults.appendChild(result);
             }
+        );
 
-        });
 
     } catch (error) {
 
-        console.error(error);
+        console.error(
+            "Error buscando usuarios:",
+            error
+        );
 
     }
-});
+
+}
 
 
-async function findConversation(otherUserId) {
+/* =========================================================
+   BUSCAR CHAT EXISTENTE
+   ========================================================= */
 
-    const conversationsQuery = query(
-        collection(db, "conversations"),
-        where("members", "array-contains", currentUser.uid)
-    );
+async function findConversation(
+    otherUserId
+) {
+
+    const conversationsQuery =
+        query(
+            collection(
+                db,
+                "conversations"
+            ),
+
+            where(
+                "members",
+                "array-contains",
+                currentUser.uid
+            )
+        );
 
 
     const snapshot =
-        await getDocs(conversationsQuery);
+        await getDocs(
+            conversationsQuery
+        );
 
 
-    for (const conversationDocument of snapshot.docs) {
+    for (
+        const conversationDocument
+        of snapshot.docs
+    ) {
 
-        const data = conversationDocument.data();
+        const data =
+            conversationDocument.data();
+
 
         if (
-            Array.isArray(data.members) &&
+            Array.isArray(
+                data.members
+            ) &&
             data.members.length === 2 &&
-            data.members.includes(otherUserId)
+            data.members.includes(
+                otherUserId
+            )
         ) {
 
             return conversationDocument.id;
         }
+
     }
 
 
@@ -454,99 +882,153 @@ async function findConversation(otherUserId) {
 }
 
 
-async function openConversation(otherUserId, otherUser) {
+/* =========================================================
+   ABRIR CHAT
+   ========================================================= */
+
+async function openConversation(
+    otherUserId,
+    otherUser
+) {
 
     currentOtherUser = {
+
         id: otherUserId,
+
         ...otherUser
+
     };
 
 
     let conversationId =
-        await findConversation(otherUserId);
+        await findConversation(
+            otherUserId
+        );
 
 
     if (!conversationId) {
 
         const conversationReference =
             await addDoc(
-                collection(db, "conversations"),
+                collection(
+                    db,
+                    "conversations"
+                ),
                 {
+
                     members: [
                         currentUser.uid,
                         otherUserId
                     ],
 
-                    createdAt: serverTimestamp(),
+                    createdAt:
+                        serverTimestamp(),
 
                     lastMessage: "",
-                    lastMessageAt: serverTimestamp()
+
+                    lastMessageAt:
+                        serverTimestamp()
+
                 }
             );
 
 
         conversationId =
             conversationReference.id;
+
     }
 
 
-    currentConversationId = conversationId;
+    currentConversationId =
+        conversationId;
 
 
-    welcome.classList.add("hidden");
-    chatWindow.classList.remove("hidden");
+    welcome.classList.add(
+        "hidden"
+    );
+
+
+    chatWindow.classList.remove(
+        "hidden"
+    );
 
 
     chatTitle.textContent =
-        "@" + otherUser.username;
+        "@" +
+        otherUser.username;
+
 
     chatStatus.textContent =
         "Chat privado";
 
 
-    loadMessages(conversationId);
+    loadMessages(
+        conversationId
+    );
+
 }
 
 
-function loadMessages(conversationId) {
+/* =========================================================
+   CARGAR MENSAJES
+   ========================================================= */
+
+function loadMessages(
+    conversationId
+) {
 
     messages.innerHTML = "";
 
 
     if (unsubscribeMessages) {
+
         unsubscribeMessages();
+
         unsubscribeMessages = null;
+
     }
 
 
-    const messagesQuery = query(
-        collection(
-            db,
-            "conversations",
-            conversationId,
-            "messages"
-        ),
-        orderBy("createdAt", "asc")
-    );
+    const messagesQuery =
+        query(
+
+            collection(
+                db,
+                "conversations",
+                conversationId,
+                "messages"
+            ),
+
+            orderBy(
+                "createdAt",
+                "asc"
+            )
+
+        );
 
 
     unsubscribeMessages =
         onSnapshot(
             messagesQuery,
-            (snapshot) => {
+
+            function (snapshot) {
 
                 messages.innerHTML = "";
 
 
-                snapshot.forEach((messageDocument) => {
+                snapshot.forEach(
+                    function (messageDocument) {
 
-                    const message =
-                        messageDocument.data();
+                        const message =
+                            messageDocument.data();
 
 
-                    renderMessage(message);
+                        renderMessage(
+                            message
+                        );
 
-                });
+                    }
+                );
 
 
                 messages.scrollTop =
@@ -554,7 +1036,7 @@ function loadMessages(conversationId) {
 
             },
 
-            (error) => {
+            function (error) {
 
                 console.error(
                     "Error cargando mensajes:",
@@ -563,17 +1045,27 @@ function loadMessages(conversationId) {
 
             }
         );
+
 }
 
 
-function renderMessage(message) {
+/* =========================================================
+   MOSTRAR MENSAJE
+   ========================================================= */
+
+function renderMessage(
+    message
+) {
 
     const messageElement =
-        document.createElement("div");
+        document.createElement(
+            "div"
+        );
 
 
     const isMine =
-        message.senderId === currentUser.uid;
+        message.senderId ===
+        currentUser.uid;
 
 
     messageElement.className =
@@ -583,7 +1075,9 @@ function renderMessage(message) {
 
 
     const contentElement =
-        document.createElement("div");
+        document.createElement(
+            "div"
+        );
 
 
     contentElement.className =
@@ -602,7 +1096,34 @@ function renderMessage(message) {
     messages.appendChild(
         messageElement
     );
+
 }
+
+
+/* =========================================================
+   ENVIAR MENSAJE
+   ========================================================= */
+
+sendButton.addEventListener(
+    "click",
+    sendMessage
+);
+
+
+messageInput.addEventListener(
+    "keydown",
+    function (event) {
+
+        if (event.key === "Enter") {
+
+            event.preventDefault();
+
+            sendMessage();
+
+        }
+
+    }
+);
 
 
 async function sendMessage() {
@@ -612,13 +1133,19 @@ async function sendMessage() {
 
 
     if (!content) {
+
         return;
     }
 
 
     if (!currentConversationId) {
+
         return;
     }
+
+
+    const originalContent =
+        content;
 
 
     messageInput.value = "";
@@ -630,34 +1157,56 @@ async function sendMessage() {
     try {
 
         await addDoc(
+
             collection(
                 db,
                 "conversations",
                 currentConversationId,
                 "messages"
             ),
+
             {
-                senderId: currentUser.uid,
-                content: content,
-                createdAt: serverTimestamp()
+
+                senderId:
+                    currentUser.uid,
+
+                content:
+                    content,
+
+                createdAt:
+                    serverTimestamp()
+
             }
+
         );
 
 
         await setDoc(
+
             doc(
                 db,
                 "conversations",
                 currentConversationId
             ),
+
             {
-                lastMessage: content,
-                lastMessageAt: serverTimestamp()
+
+                lastMessage:
+                    content,
+
+                lastMessageAt:
+                    serverTimestamp()
+
             },
+
             {
+
                 merge: true
+
             }
+
         );
+
 
     } catch (error) {
 
@@ -666,60 +1215,57 @@ async function sendMessage() {
             error
         );
 
-        messageInput.value = content;
+
+        messageInput.value =
+            originalContent;
 
     } finally {
 
         sendButton.disabled = false;
 
     }
+
 }
 
 
-sendButton.addEventListener(
-    "click",
-    sendMessage
-);
-
-
-messageInput.addEventListener(
-    "keydown",
-    (event) => {
-
-        if (event.key === "Enter") {
-
-            event.preventDefault();
-
-            sendMessage();
-        }
-
-    }
-);
-
+/* =========================================================
+   CARGAR LISTA DE CHATS
+   ========================================================= */
 
 function loadConversations() {
 
     if (unsubscribeConversations) {
+
         unsubscribeConversations();
+
         unsubscribeConversations = null;
+
     }
 
 
     const conversationsQuery =
         query(
-            collection(db, "conversations"),
+
+            collection(
+                db,
+                "conversations"
+            ),
+
             where(
                 "members",
                 "array-contains",
                 currentUser.uid
             )
+
         );
 
 
     unsubscribeConversations =
         onSnapshot(
+
             conversationsQuery,
-            async (snapshot) => {
+
+            async function (snapshot) {
 
                 chatList.innerHTML = "";
 
@@ -735,27 +1281,37 @@ function loadConversations() {
 
                     const otherUserId =
                         conversation.members.find(
-                            id =>
-                                id !== currentUser.uid
+                            function (id) {
+
+                                return id !==
+                                    currentUser.uid;
+
+                            }
                         );
 
 
                     if (!otherUserId) {
+
                         continue;
                     }
 
 
                     const userSnapshot =
                         await getDoc(
+
                             doc(
                                 db,
                                 "users",
                                 otherUserId
                             )
+
                         );
 
 
-                    if (!userSnapshot.exists()) {
+                    if (
+                        !userSnapshot.exists()
+                    ) {
+
                         continue;
                     }
 
@@ -765,7 +1321,13 @@ function loadConversations() {
 
 
                     const chatButton =
-                        document.createElement("button");
+                        document.createElement(
+                            "button"
+                        );
+
+
+                    chatButton.type =
+                        "button";
 
 
                     chatButton.className =
@@ -773,12 +1335,13 @@ function loadConversations() {
 
 
                     chatButton.textContent =
-                        "@" + user.username;
+                        "@" +
+                        user.username;
 
 
                     chatButton.addEventListener(
                         "click",
-                        () => {
+                        function () {
 
                             openConversation(
                                 otherUserId,
@@ -792,11 +1355,12 @@ function loadConversations() {
                     chatList.appendChild(
                         chatButton
                     );
+
                 }
 
             },
 
-            (error) => {
+            function (error) {
 
                 console.error(
                     "Error cargando chats:",
@@ -804,5 +1368,7 @@ function loadConversations() {
                 );
 
             }
+
         );
+
 }
