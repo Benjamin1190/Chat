@@ -1,486 +1,1020 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <title>Chat</title>
-
-  <link rel="stylesheet" href="style.css">
-</head>
-
-<body>
-
-  <!-- =====================================================
-       AUTENTICACIÓN
-  ====================================================== -->
-
-  <section id="authScreen" class="auth-screen">
-
-    <div class="auth-box">
-
-      <div class="auth-logo">
-        💬
-      </div>
-
-      <h1>Chat</h1>
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    font-family: "Segoe UI", Arial, sans-serif;
+    background: #0f172a;
+    color: #e5e7eb;
+}
+
+body {
+    overflow: hidden;
+}
+
+button,
+input,
+textarea {
+    font-family: inherit;
+}
+
+button {
+    cursor: pointer;
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* =====================================================
+   AUTENTICACIÓN
+===================================================== */
+
+.auth-screen {
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    background:
+        radial-gradient(circle at 15% 20%, rgba(37, 99, 235, 0.25), transparent 30%),
+        radial-gradient(circle at 85% 80%, rgba(99, 102, 241, 0.18), transparent 30%),
+        #0f172a;
+}
+
+.auth-box {
+    width: 400px;
+    max-width: calc(100% - 30px);
+    padding: 38px;
+    background: #172033;
+    border: 1px solid #26344b;
+    border-radius: 24px;
+    box-shadow: 0 25px 70px rgba(0, 0, 0, 0.45);
+    text-align: center;
+}
+
+.auth-logo {
+    width: 70px;
+    height: 70px;
+    margin: 0 auto 18px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 21px;
+    background: #2563eb;
+
+    font-size: 34px;
+
+    box-shadow:
+        0 12px 30px rgba(37, 99, 235, 0.35);
+}
+
+.auth-box h1 {
+    margin: 0;
+    font-size: 30px;
+    color: #f8fafc;
+}
+
+.auth-subtitle {
+    margin: 8px 0 28px;
+    color: #94a3b8;
+    font-size: 14px;
+}
+
+.auth-box form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.auth-box input {
+    width: 100%;
+    height: 48px;
+
+    padding: 0 15px;
+
+    border: 1px solid #334155;
+    border-radius: 13px;
+
+    outline: none;
+
+    background: #111827;
+    color: #f8fafc;
+
+    font-size: 14px;
+
+    transition: 0.2s;
+}
+
+.auth-box input::placeholder {
+    color: #64748b;
+}
+
+.auth-box input:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+}
+
+.primary-button,
+.secondary-button {
+    height: 46px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    transition: 0.2s;
+}
 
-      <p class="auth-subtitle">
-        Tu chat privado y grupos
-      </p>
+.primary-button {
+    border: 0;
+    background: #2563eb;
+    color: white;
+}
 
+.primary-button:hover {
+    background: #3b82f6;
+    transform: translateY(-1px);
+}
 
-      <!-- LOGIN -->
+.secondary-button {
+    border: 1px solid #334155;
+    background: #202c40;
+    color: #cbd5e1;
+}
 
-      <form id="loginForm">
+.secondary-button:hover {
+    background: #29384f;
+    border-color: #475569;
+}
 
-        <input
-          id="loginEmail"
-          type="email"
-          placeholder="Correo electrónico"
-          autocomplete="email"
-          required
-        >
+.auth-message {
+    min-height: 20px;
+    margin-top: 15px;
+    color: #f87171;
+    font-size: 13px;
+    word-break: break-word;
+}
 
-        <input
-          id="loginPassword"
-          type="password"
-          placeholder="Contraseña"
-          autocomplete="current-password"
-          required
-        >
+/* =====================================================
+   APP
+===================================================== */
 
-        <button
-          id="loginButton"
-          type="submit"
-          class="primary-button"
-        >
-          Iniciar sesión
-        </button>
+.app {
+    width: 100%;
+    height: 100vh;
 
-        <button
-          id="showRegister"
-          type="button"
-          class="secondary-button"
-        >
-          Crear cuenta
-        </button>
+    display: flex;
 
-      </form>
+    background: #0f172a;
+}
 
+/* =====================================================
+   SIDEBAR
+===================================================== */
 
-      <!-- REGISTRO -->
+.sidebar {
+    width: 340px;
+    min-width: 340px;
+    height: 100%;
 
-      <form id="registerForm" class="hidden">
+    display: flex;
+    flex-direction: column;
 
-        <input
-          id="registerUsername"
-          type="text"
-          placeholder="Nombre de usuario"
-          maxlength="30"
-          autocomplete="username"
-          required
-        >
+    background: #151f31;
+    border-right: 1px solid #26344b;
+}
 
-        <input
-          id="registerEmail"
-          type="email"
-          placeholder="Correo electrónico"
-          autocomplete="email"
-          required
-        >
+/* =====================================================
+   HEADER SIDEBAR
+===================================================== */
 
-        <input
-          id="registerPassword"
-          type="password"
-          placeholder="Contraseña"
-          autocomplete="new-password"
-          required
-        >
+.sidebar-header {
+    height: 78px;
+    padding: 0 16px;
 
-        <button
-          id="registerButton"
-          type="submit"
-          class="primary-button"
-        >
-          Crear cuenta
-        </button>
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
 
-        <button
-          id="showLogin"
-          type="button"
-          class="secondary-button"
-        >
-          Ya tengo una cuenta
-        </button>
+    border-bottom: 1px solid #26344b;
+}
 
-      </form>
+.profile {
+    display: flex;
+    align-items: center;
+    gap: 11px;
 
+    min-width: 0;
+}
 
-      <div id="authMessage" class="auth-message"></div>
+.avatar {
+    width: 42px;
+    height: 42px;
 
-    </div>
+    flex-shrink: 0;
 
-  </section>
+    display: flex;
+    align-items: center;
+    justify-content: center;
 
+    border-radius: 14px;
+    background: #263b60;
 
-  <!-- =====================================================
-       APLICACIÓN
-  ====================================================== -->
+    font-size: 20px;
+}
 
-  <main id="app" class="app hidden">
+.profile strong {
+    display: block;
 
-    <!-- SIDEBAR -->
+    max-width: 150px;
 
-    <aside class="sidebar">
+    color: #f8fafc;
+    font-size: 14px;
 
-      <header class="sidebar-header">
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
 
-        <div class="profile">
+.profile span {
+    display: block;
+    margin-top: 3px;
 
-          <div class="avatar">
-            👤
-          </div>
+    color: #4ade80;
+    font-size: 11px;
+}
 
-          <div>
-            <strong id="currentUser">
-              Usuario
-            </strong>
+.sidebar-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
 
-            <span>
-              En línea
-            </span>
-          </div>
+.sidebar-actions button {
+    width: 36px;
+    height: 36px;
 
-        </div>
+    border: 0;
+    border-radius: 10px;
 
-        <div class="sidebar-actions">
+    background: transparent;
+    color: #94a3b8;
 
-          <button
-            id="createGroupButton"
-            title="Crear grupo"
-          >
-            👥
-          </button>
+    font-size: 16px;
 
-          <button
-            id="adminButton"
-            class="hidden"
-            title="Administración"
-          >
-            ⚙️
-          </button>
+    transition: 0.2s;
+}
 
-          <button
-            id="logoutButton"
-            title="Cerrar sesión"
-          >
-            🚪
-          </button>
+.sidebar-actions button:hover {
+    background: #26344b;
+    color: #f8fafc;
+}
 
-        </div>
+/* =====================================================
+   BUSCADOR
+===================================================== */
 
-      </header>
+.search-box {
+    padding: 14px 13px;
+}
 
+.search-box input {
+    width: 100%;
+    height: 43px;
 
-      <!-- BUSCADOR -->
+    padding: 0 14px;
 
-      <div class="search-box">
+    border: 1px solid #2d3b52;
+    border-radius: 12px;
 
-        <input
-          id="userSearch"
-          type="text"
-          placeholder="Buscar usuario..."
-          autocomplete="off"
-        >
+    outline: none;
 
-      </div>
+    background: #1c293d;
+    color: #f8fafc;
 
+    font-size: 13px;
 
-      <div
-        id="searchResults"
-        class="search-results hidden"
-      ></div>
+    transition: 0.2s;
+}
 
+.search-box input::placeholder {
+    color: #718096;
+}
 
-      <!-- LISTA DE CHATS -->
+.search-box input:focus {
+    border-color: #3b82f6;
+    background: #202f46;
+}
 
-      <div
-        id="chatList"
-        class="chat-list"
-      ></div>
+/* =====================================================
+   RESULTADOS
+===================================================== */
 
-    </aside>
+.search-results {
+    max-height: 230px;
+    overflow-y: auto;
 
+    border-bottom: 1px solid #26344b;
+}
 
-    <!-- CHAT -->
+.search-results > * {
+    margin: 4px 10px;
+    padding: 11px 12px;
 
-    <section class="chat-area">
+    border-radius: 11px;
 
-      <!-- BIENVENIDA -->
+    cursor: pointer;
 
-      <div id="welcome" class="welcome">
+    transition: 0.15s;
+}
 
-        <div class="welcome-icon">
-          💬
-        </div>
+.search-results > *:hover {
+    background: #22314a;
+}
 
-        <h2>Bienvenido a Chat</h2>
+/* =====================================================
+   CHATS
+===================================================== */
 
-        <p>
-          Seleccioná una conversación para comenzar.
-        </p>
+.chat-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 4px 8px 12px;
+}
 
-      </div>
+.chat-list > * {
+    margin-bottom: 3px;
+    padding: 12px;
 
+    border-radius: 13px;
 
-      <!-- VENTANA DE CHAT -->
+    cursor: pointer;
 
-      <div
-        id="chatWindow"
-        class="chat-window hidden"
-      >
+    transition: 0.15s;
+}
 
-        <!-- HEADER -->
+.chat-list > *:hover {
+    background: #1d2b40;
+}
 
-        <header class="chat-header">
+/* =====================================================
+   ÁREA DE CHAT
+===================================================== */
 
-          <div>
+.chat-area {
+    flex: 1;
+    min-width: 0;
+    height: 100%;
 
-            <h2 id="chatTitle">
-              Chat
-            </h2>
+    background: #0d1626;
+}
 
-            <span id="chatStatus"></span>
+/* =====================================================
+   BIENVENIDA
+===================================================== */
 
-          </div>
+.welcome {
+    width: 100%;
+    height: 100%;
 
-          <button
-            id="deleteChatButton"
-            title="Eliminar conversación"
-          >
-            🗑️
-          </button>
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
 
-        </header>
+    text-align: center;
 
+    background:
+        radial-gradient(circle at center, rgba(37, 99, 235, 0.06), transparent 40%);
+}
 
-        <!-- MENSAJES -->
+.welcome-icon {
+    width: 82px;
+    height: 82px;
 
-        <div
-          id="messages"
-          class="messages"
-        ></div>
+    display: flex;
+    align-items: center;
+    justify-content: center;
 
+    margin-bottom: 20px;
 
-        <!-- ESCRIBIR -->
+    border-radius: 26px;
 
-        <div class="message-area">
+    background: #1c3155;
 
-          <textarea
-            id="messageInput"
-            maxlength="4000"
-            rows="1"
-            placeholder="Escribí un mensaje..."
-          ></textarea>
+    font-size: 38px;
 
-          <div class="message-bottom">
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.25);
+}
 
-            <span id="characterCounter">
-              0/4000
-            </span>
+.welcome h2 {
+    margin: 0 0 8px;
 
-            <button
-              id="sendButton"
-              class="send-button"
-            >
-              ➤
-            </button>
+    color: #f8fafc;
+    font-size: 24px;
+}
 
-          </div>
+.welcome p {
+    margin: 0;
 
-        </div>
+    color: #718096;
+    font-size: 14px;
+}
 
-      </div>
+/* =====================================================
+   VENTANA DE CHAT
+===================================================== */
 
-    </section>
+.chat-window {
+    width: 100%;
+    height: 100%;
 
-  </main>
+    display: flex;
+    flex-direction: column;
+}
 
+/* =====================================================
+   HEADER CHAT
+===================================================== */
 
-  <!-- =====================================================
-       MODAL CREAR GRUPO
-  ====================================================== -->
+.chat-header {
+    height: 78px;
+    min-height: 78px;
 
-  <div
-    id="groupModal"
-    class="modal hidden"
-  >
+    padding: 0 22px;
 
-    <div class="modal-box">
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
 
-      <h2>Crear grupo</h2>
+    background: #151f31;
+    border-bottom: 1px solid #26344b;
+}
 
-      <input
-        id="groupName"
-        type="text"
-        maxlength="50"
-        placeholder="Nombre del grupo"
-      >
+.chat-header h2 {
+    margin: 0;
 
-      <h3>Agregar personas</h3>
+    color: #f8fafc;
+    font-size: 16px;
+}
 
-      <div
-        id="groupUsers"
-        class="group-users"
-      ></div>
+.chat-header span {
+    display: block;
+    margin-top: 4px;
 
-      <div class="modal-buttons">
+    color: #718096;
+    font-size: 11px;
+}
 
-        <button
-          id="cancelGroupButton"
-          class="secondary-button"
-          type="button"
-        >
-          Cancelar
-        </button>
+#deleteChatButton {
+    width: 38px;
+    height: 38px;
 
-        <button
-          id="confirmGroupButton"
-          class="primary-button"
-          type="button"
-        >
-          Crear grupo
-        </button>
+    border: 0;
+    border-radius: 10px;
 
-      </div>
+    background: transparent;
+    color: #64748b;
 
-    </div>
+    font-size: 16px;
 
-  </div>
+    transition: 0.2s;
+}
 
+#deleteChatButton:hover {
+    background: #3a2229;
+    color: #f87171;
+}
 
-  <!-- =====================================================
-       ADMIN
-  ====================================================== -->
+/* =====================================================
+   MENSAJES
+===================================================== */
 
-  <div
-    id="adminPanel"
-    class="admin-panel hidden"
-  >
+.messages {
+    flex: 1;
+    min-height: 0;
 
-    <div class="admin-box">
+    overflow-y: auto;
 
-      <header class="admin-header">
+    padding: 24px;
 
-        <div>
-          <h2>Administración</h2>
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
 
-          <span id="adminUserCount">
-            0 usuarios
-          </span>
-        </div>
+    background:
+        radial-gradient(circle at 30% 20%, rgba(37, 99, 235, 0.035), transparent 30%),
+        #0d1626;
+}
 
-        <button id="adminCloseButton">
-          ✕
-        </button>
+/*
+   LAS BURBUJAS SE ADAPTAN AL TEXTO
+*/
 
-      </header>
+.message {
+    width: fit-content;
+    max-width: min(65%, 600px);
 
+    padding: 10px 14px;
 
-      <div class="admin-toolbar">
+    border-radius: 17px;
 
-        <input
-          id="adminSearch"
-          type="text"
-          placeholder="Buscar usuario..."
-        >
+    font-size: 14px;
+    line-height: 1.45;
 
-        <button
-          id="adminSyncButton"
-        >
-          🔄 Sincronizar
-        </button>
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    white-space: pre-wrap;
 
-      </div>
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.16);
+}
 
+.message.mine {
+    align-self: flex-end;
 
-      <div
-        id="adminSyncStatus"
-        class="admin-sync-status"
-      ></div>
+    background: #2563eb;
+    color: white;
 
+    border-bottom-right-radius: 5px;
+}
 
-      <div class="admin-content">
+.message.theirs {
+    align-self: flex-start;
 
-        <div class="admin-users">
+    background: #1d2a3e;
+    color: #e5e7eb;
 
-          <div
-            id="adminUsers"
-            class="admin-user-list"
-          ></div>
+    border: 1px solid #293950;
 
-          <div
-            id="adminEmpty"
-            class="admin-empty hidden"
-          >
-            No se encontraron usuarios.
-          </div>
+    border-bottom-left-radius: 5px;
+}
 
-        </div>
+/* =====================================================
+   ÁREA ESCRIBIR
+===================================================== */
 
+.message-area {
+    padding: 13px 17px;
 
-        <div
-          id="adminDetails"
-          class="admin-details hidden"
-        >
+    background: #151f31;
+    border-top: 1px solid #26344b;
+}
 
-          <div class="admin-user-info">
+#messageInput {
+    width: 100%;
 
-            <h2 id="adminDetailName">
-              Usuario
-            </h2>
+    min-height: 45px;
+    max-height: 150px;
 
-            <p>
-              <strong>Email:</strong>
-              <span id="adminDetailEmail"></span>
-            </p>
+    padding: 12px 14px;
 
-            <p>
-              <strong>UID:</strong>
-              <span id="adminDetailUid"></span>
-            </p>
+    resize: none;
 
-            <p>
-              <strong>Creado:</strong>
-              <span id="adminDetailCreated"></span>
-            </p>
+    border: 1px solid #2d3b52;
+    border-radius: 13px;
 
-          </div>
+    outline: none;
 
+    background: #1c293d;
+    color: #f8fafc;
 
-          <h3>
-            Historial de conversaciones
-          </h3>
+    font-size: 14px;
+    line-height: 1.4;
 
-          <div
-            id="adminHistory"
-            class="admin-history"
-          ></div>
+    transition: 0.2s;
+}
 
-        </div>
+#messageInput::placeholder {
+    color: #718096;
+}
 
-      </div>
+#messageInput:focus {
+    border-color: #3b82f6;
+    background: #202f46;
+}
 
-    </div>
+.message-bottom {
+    margin-top: 7px;
 
-  </div>
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+}
 
+#characterCounter {
+    color: #64748b;
+    font-size: 11px;
+}
 
-  <script
-    type="module"
-    src="app.js"
-  ></script>
+.send-button {
+    width: 42px;
+    height: 38px;
 
-</body>
-</html>
+    border: 0;
+    border-radius: 11px;
+
+    background: #2563eb;
+    color: white;
+
+    font-size: 17px;
+
+    transition: 0.2s;
+}
+
+.send-button:hover {
+    background: #3b82f6;
+    transform: translateY(-1px);
+}
+
+/* =====================================================
+   MODAL
+===================================================== */
+
+.modal {
+    position: fixed;
+    inset: 0;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 20px;
+
+    background: rgba(2, 6, 23, 0.72);
+
+    z-index: 100;
+}
+
+.modal-box {
+    width: 450px;
+    max-width: 100%;
+    max-height: 90vh;
+
+    overflow-y: auto;
+
+    padding: 25px;
+
+    border: 1px solid #2d3b52;
+    border-radius: 20px;
+
+    background: #172033;
+
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5);
+}
+
+.modal-box h2 {
+    margin: 0 0 18px;
+
+    color: #f8fafc;
+}
+
+.modal-box h3 {
+    margin: 20px 0 10px;
+
+    color: #cbd5e1;
+    font-size: 14px;
+}
+
+.modal-box input {
+    width: 100%;
+    height: 45px;
+
+    padding: 0 13px;
+
+    border: 1px solid #334155;
+    border-radius: 11px;
+
+    outline: none;
+
+    background: #111827;
+    color: white;
+}
+
+.modal-box input:focus {
+    border-color: #3b82f6;
+}
+
+.group-users {
+    max-height: 250px;
+    overflow-y: auto;
+}
+
+.modal-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.modal-buttons button {
+    flex: 1;
+}
+
+/* =====================================================
+   ADMIN
+===================================================== */
+
+.admin-panel {
+    position: fixed;
+    inset: 0;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 25px;
+
+    background: rgba(2, 6, 23, 0.78);
+
+    z-index: 200;
+}
+
+.admin-box {
+    width: 1000px;
+    max-width: 100%;
+    height: 720px;
+    max-height: 90vh;
+
+    display: flex;
+    flex-direction: column;
+
+    background: #172033;
+
+    border: 1px solid #2d3b52;
+    border-radius: 22px;
+
+    overflow: hidden;
+
+    box-shadow: 0 30px 90px rgba(0, 0, 0, 0.55);
+}
+
+.admin-header {
+    min-height: 75px;
+
+    padding: 0 20px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    border-bottom: 1px solid #26344b;
+}
+
+.admin-header h2 {
+    margin: 0;
+
+    color: #f8fafc;
+    font-size: 18px;
+}
+
+.admin-header span {
+    display: block;
+    margin-top: 4px;
+
+    color: #718096;
+    font-size: 12px;
+}
+
+#adminCloseButton {
+    width: 38px;
+    height: 38px;
+
+    border: 0;
+    border-radius: 10px;
+
+    background: transparent;
+    color: #94a3b8;
+
+    font-size: 17px;
+}
+
+#adminCloseButton:hover {
+    background: #3a2229;
+    color: #f87171;
+}
+
+.admin-toolbar {
+    padding: 13px;
+
+    display: flex;
+    gap: 10px;
+
+    border-bottom: 1px solid #26344b;
+}
+
+.admin-toolbar input {
+    flex: 1;
+
+    height: 42px;
+
+    padding: 0 13px;
+
+    border: 1px solid #334155;
+    border-radius: 11px;
+
+    outline: none;
+
+    background: #111827;
+    color: white;
+}
+
+.admin-toolbar button {
+    padding: 0 15px;
+
+    border: 0;
+    border-radius: 11px;
+
+    background: #2563eb;
+    color: white;
+
+    font-weight: 600;
+}
+
+.admin-toolbar button:hover {
+    background: #3b82f6;
+}
+
+.admin-sync-status {
+    padding: 0 15px;
+
+    color: #718096;
+    font-size: 12px;
+}
+
+.admin-content {
+    flex: 1;
+    min-height: 0;
+
+    display: flex;
+}
+
+.admin-users {
+    width: 42%;
+    min-width: 260px;
+
+    overflow-y: auto;
+
+    padding: 10px;
+
+    border-right: 1px solid #26344b;
+}
+
+.admin-user-list > * {
+    padding: 12px;
+
+    border-radius: 11px;
+
+    cursor: pointer;
+}
+
+.admin-user-list > *:hover {
+    background: #22314a;
+}
+
+.admin-empty {
+    padding: 25px;
+
+    text-align: center;
+
+    color: #718096;
+}
+
+.admin-details {
+    flex: 1;
+
+    overflow-y: auto;
+
+    padding: 25px;
+}
+
+.admin-user-info {
+    padding-bottom: 20px;
+    margin-bottom: 20px;
+
+    border-bottom: 1px solid #26344b;
+}
+
+.admin-user-info h2 {
+    margin-top: 0;
+
+    color: #f8fafc;
+}
+
+.admin-user-info p {
+    color: #94a3b8;
+    font-size: 13px;
+}
+
+.admin-user-info strong {
+    color: #cbd5e1;
+}
+
+.admin-details h3 {
+    color: #e2e8f0;
+}
+
+.admin-history {
+    color: #94a3b8;
+}
+
+/* =====================================================
+   SCROLLBAR
+===================================================== */
+
+::-webkit-scrollbar {
+    width: 7px;
+    height: 7px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #334155;
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #475569;
+}
+
+/* =====================================================
+   MÓVIL
+===================================================== */
+
+@media (max-width: 750px) {
+
+    .sidebar {
+        width: 290px;
+        min-width: 290px;
+    }
+
+    .messages {
+        padding: 16px 12px;
+    }
+
+    .message {
+        max-width: 80%;
+    }
+
+    .chat-header {
+        padding: 0 14px;
+    }
+
+    .message-area {
+        padding: 10px;
+    }
+
+    .admin-panel {
+        padding: 10px;
+    }
+
+    .admin-box {
+        height: 95vh;
+    }
+
+    .admin-users {
+        width: 40%;
+        min-width: 150px;
+    }
+}
+
+@media (max-width: 550px) {
+
+    .sidebar {
+        width: 100%;
+        min-width: 100%;
+    }
+
+    .chat-area {
+        display: none;
+    }
+
+    .auth-box {
+        padding: 28px 22px;
+    }
+
+    .admin-content {
+        flex-direction: column;
+    }
+
+    .admin-users {
+        width: 100%;
+        height: 40%;
+        min-width: 0;
+
+        border-right: 0;
+        border-bottom: 1px solid #26344b;
+    }
+
+    .admin-details {
+        height: 60%;
+    }
+}
