@@ -45,7 +45,7 @@ const db = getFirestore(firebaseApp);
 
 
 /* =========================
-   ELEMENTOS HTML
+   ELEMENTOS
 ========================= */
 
 const authScreen = document.getElementById("authScreen");
@@ -64,30 +64,50 @@ const registerPassword = document.getElementById("registerPassword");
 const loginButton = document.getElementById("loginButton");
 const registerButton = document.getElementById("registerButton");
 
-const showRegisterButton = document.getElementById("showRegister");
-const showLoginButton = document.getElementById("showLogin");
+const showRegisterButton =
+    document.getElementById("showRegister");
 
-const authMessage = document.getElementById("authMessage");
+const showLoginButton =
+    document.getElementById("showLogin");
 
-const currentUserElement = document.getElementById("currentUser");
+const authMessage =
+    document.getElementById("authMessage");
 
-const logoutButton = document.getElementById("logoutButton");
+const currentUserElement =
+    document.getElementById("currentUser");
 
-const userSearch = document.getElementById("userSearch");
-const searchResults = document.getElementById("searchResults");
+const logoutButton =
+    document.getElementById("logoutButton");
 
-const chatList = document.getElementById("chatList");
+const userSearch =
+    document.getElementById("userSearch");
 
-const welcome = document.getElementById("welcome");
-const chatWindow = document.getElementById("chatWindow");
+const searchResults =
+    document.getElementById("searchResults");
 
-const chatTitle = document.getElementById("chatTitle");
-const chatStatus = document.getElementById("chatStatus");
+const chatList =
+    document.getElementById("chatList");
 
-const messages = document.getElementById("messages");
+const welcome =
+    document.getElementById("welcome");
 
-const messageInput = document.getElementById("messageInput");
-const sendButton = document.getElementById("sendButton");
+const chatWindow =
+    document.getElementById("chatWindow");
+
+const chatTitle =
+    document.getElementById("chatTitle");
+
+const chatStatus =
+    document.getElementById("chatStatus");
+
+const messages =
+    document.getElementById("messages");
+
+const messageInput =
+    document.getElementById("messageInput");
+
+const sendButton =
+    document.getElementById("sendButton");
 
 
 /* =========================
@@ -107,10 +127,11 @@ let creatingAccount = false;
 
 
 /* =========================
-   FUNCIONES GENERALES
+   MENSAJES DE AUTENTICACIÓN
 ========================= */
 
 function showAuthMessage(message, error = false) {
+
     authMessage.textContent = message;
 
     if (error) {
@@ -121,31 +142,23 @@ function showAuthMessage(message, error = false) {
 }
 
 
+/* =========================
+   MOSTRAR / OCULTAR APP
+========================= */
+
 function showApp() {
+
     authScreen.classList.add("hidden");
+
     app.classList.remove("hidden");
 }
 
 
 function showAuth() {
+
     app.classList.add("hidden");
+
     authScreen.classList.remove("hidden");
-}
-
-
-function showLoginForm() {
-    loginForm.classList.remove("hidden");
-    registerForm.classList.add("hidden");
-
-    showAuthMessage("");
-}
-
-
-function showRegisterForm() {
-    loginForm.classList.add("hidden");
-    registerForm.classList.remove("hidden");
-
-    showAuthMessage("");
 }
 
 
@@ -153,14 +166,36 @@ function showRegisterForm() {
    CAMBIAR LOGIN / REGISTRO
 ========================= */
 
-showRegisterButton.addEventListener("click", () => {
-    showRegisterForm();
-});
+function showLoginForm() {
+
+    loginForm.classList.remove("hidden");
+
+    registerForm.classList.add("hidden");
+
+    showAuthMessage("");
+}
 
 
-showLoginButton.addEventListener("click", () => {
-    showLoginForm();
-});
+function showRegisterForm() {
+
+    loginForm.classList.add("hidden");
+
+    registerForm.classList.remove("hidden");
+
+    showAuthMessage("");
+}
+
+
+showRegisterButton.addEventListener(
+    "click",
+    showRegisterForm
+);
+
+
+showLoginButton.addEventListener(
+    "click",
+    showLoginForm
+);
 
 
 /* =========================
@@ -169,49 +204,78 @@ showLoginButton.addEventListener("click", () => {
 
 async function register() {
 
-    const email = registerEmail.value.trim();
-    const username = registerUsername.value.trim();
-    const password = registerPassword.value;
+    const email =
+        registerEmail.value.trim();
+
+    const username =
+        registerUsername.value.trim();
+
+    const password =
+        registerPassword.value;
 
     if (!email) {
-        showAuthMessage("Escribe tu correo electrónico.", true);
+
+        showAuthMessage(
+            "Escribe tu correo electrónico.",
+            true
+        );
+
         return;
     }
 
     if (!username) {
-        showAuthMessage("Escribe un nombre de usuario.", true);
+
+        showAuthMessage(
+            "Escribe un nombre de usuario.",
+            true
+        );
+
         return;
     }
 
     if (!password) {
-        showAuthMessage("Escribe una contraseña.", true);
+
+        showAuthMessage(
+            "Escribe una contraseña.",
+            true
+        );
+
         return;
     }
 
     if (username.length < 3) {
+
         showAuthMessage(
             "El usuario debe tener al menos 3 caracteres.",
             true
         );
+
         return;
     }
 
     if (password.length < 6) {
+
         showAuthMessage(
             "La contraseña debe tener al menos 6 caracteres.",
             true
         );
+
         return;
     }
 
     registerButton.disabled = true;
+
     creatingAccount = true;
 
-    showAuthMessage("Creando cuenta...");
+    showAuthMessage(
+        "Creando cuenta..."
+    );
 
     try {
 
-        console.log("1. Creando usuario en Authentication...");
+        console.log(
+            "1. Creando usuario en Authentication..."
+        );
 
         const userCredential =
             await createUserWithEmailAndPassword(
@@ -220,16 +284,26 @@ async function register() {
                 password
             );
 
-        console.log("2. Authentication OK");
+        console.log(
+            "2. Authentication OK"
+        );
 
-        const user = userCredential.user;
+        const user =
+            userCredential.user;
 
-        const usernameLower = username.toLowerCase();
+        const usernameLower =
+            username.toLowerCase();
 
-        console.log("3. Guardando perfil en Firestore...");
+        console.log(
+            "3. Guardando perfil en Firestore..."
+        );
 
         await setDoc(
-            doc(db, "users", user.uid),
+            doc(
+                db,
+                "users",
+                user.uid
+            ),
             {
                 username: username,
                 usernameLower: usernameLower,
@@ -238,7 +312,9 @@ async function register() {
             }
         );
 
-        console.log("4. Firestore OK");
+        console.log(
+            "4. Firestore OK"
+        );
 
         currentUser = user;
 
@@ -252,188 +328,357 @@ async function register() {
         registerUsername.value = "";
         registerPassword.value = "";
 
-        showAuthMessage("¡Cuenta creada correctamente!");
+        showAuthMessage(
+            "¡Cuenta creada correctamente!"
+        );
 
         await enterApp();
 
     } catch (error) {
 
-        console.error("ERROR FIREBASE:");
-        console.error(error);
-
-        console.error("CÓDIGO:", error.code);
-        console.error("MENSAJE:", error.message);
-
-        let message = "Error: " + error.code;
-
-        if (error.code === "auth/email-already-in-use") {
-            message = "Ese correo ya está registrado.";
-        }
-
-        else if (error.code === "auth/invalid-email") {
-            message = "El correo electrónico no es válido.";
-        }
-
-        else if (error.code === "auth/weak-password") {
-            message = "La contraseña es demasiado débil.";
-        }
-
-        else if (error.code === "auth/operation-not-allowed") {
-            message =
-                "Email/contraseña no está habilitado en Firebase Authentication.";
-        }
-
-        else if (error.code === "auth/network-request-failed") {
-            message =
-                "Error de conexión con Firebase.";
-        }
-
-        else if (error.code === "permission-denied") {
-            message =
-                "Firebase rechazó el acceso a Firestore. Revisa las reglas.";
-        }
-
-        else {
-            message =
-                "Error: " +
-                error.code +
-                " - " +
-                error.message;
-        }
-
-        showAuthMessage(message, true);
-
-    } finally {
-
-        registerButton.disabled = false;
-        creatingAccount = false;
-
-    }
-}
-
-
-registerButton.addEventListener("click", register);
-
-
-/* =========================
-   LOGIN
-========================= */
-
-async function login() {
-
-    const email = loginEmail.value.trim();
-    const password = loginPassword.value;
-
-    if (!email) {
-        showAuthMessage(
-            "Escribe tu correo electrónico.",
-            true
-        );
-        return;
-    }
-
-    if (!password) {
-        showAuthMessage(
-            "Escribe tu contraseña.",
-            true
-        );
-        return;
-    }
-
-    loginButton.disabled = true;
-
-    showAuthMessage("Iniciando sesión...");
-
-    try {
-
-        console.log("Iniciando sesión...");
-
-        await signInWithEmailAndPassword(
-            auth,
-            email,
-            password
+        console.error(
+            "ERROR FIREBASE:",
+            error
         );
 
-        console.log("Login correcto");
+        console.error(
+            "CÓDIGO:",
+            error.code
+        );
 
-    } catch (error) {
+        console.error(
+            "MENSAJE:",
+            error.message
+        );
 
-        console.error("ERROR LOGIN:", error);
-
-        let message = "Error: " + error.code;
+        let message =
+            error.code +
+            " - " +
+            error.message;
 
         if (
             error.code ===
-            "auth/invalid-credential"
+            "auth/email-already-in-use"
         ) {
-            message =
-                "Correo o contraseña incorrectos.";
-        }
 
-        else if (
-            error.code ===
-            "auth/user-not-found"
-        ) {
             message =
-                "No existe una cuenta con ese correo.";
-        }
-
-        else if (
-            error.code ===
-            "auth/wrong-password"
-        ) {
-            message =
-                "Contraseña incorrecta.";
+                "Ese correo ya está registrado.";
         }
 
         else if (
             error.code ===
             "auth/invalid-email"
         ) {
+
             message =
                 "El correo electrónico no es válido.";
         }
 
-        else {
+        else if (
+            error.code ===
+            "auth/weak-password"
+        ) {
+
             message =
-                error.code +
-                " - " +
-                error.message;
+                "La contraseña es demasiado débil.";
         }
 
-        showAuthMessage(message, true);
+        else if (
+            error.code ===
+            "auth/operation-not-allowed"
+        ) {
+
+            message =
+                "Email/contraseña no está habilitado en Firebase Authentication.";
+        }
+
+        else if (
+            error.code ===
+            "auth/network-request-failed"
+        ) {
+
+            message =
+                "No se pudo conectar con Firebase.";
+        }
+
+        else if (
+            error.code ===
+            "permission-denied"
+        ) {
+
+            message =
+                "Firebase rechazó el acceso a Firestore.";
+        }
+
+        showAuthMessage(
+            message,
+            true
+        );
 
     } finally {
 
-        loginButton.disabled = false;
+        registerButton.disabled = false;
 
+        creatingAccount = false;
     }
 }
 
 
-loginButton.addEventListener("click", login);
+registerButton.addEventListener(
+    "click",
+    register
+);
 
 
 /* =========================
-   ENTER EN LOS CAMPOS
+   INICIO DE SESIÓN
 ========================= */
 
-loginPassword.addEventListener("keydown", event => {
+async function login() {
 
-    if (event.key === "Enter") {
-        login();
+    const email =
+        loginEmail.value.trim();
+
+    const password =
+        loginPassword.value;
+
+    if (!email) {
+
+        showAuthMessage(
+            "Escribe tu correo electrónico.",
+            true
+        );
+
+        return;
     }
 
-});
+    if (!password) {
 
+        showAuthMessage(
+            "Escribe tu contraseña.",
+            true
+        );
 
-registerPassword.addEventListener("keydown", event => {
-
-    if (event.key === "Enter") {
-        register();
+        return;
     }
 
-});
+    loginButton.disabled = true;
+
+    showAuthMessage(
+        "Iniciando sesión..."
+    );
+
+    try {
+
+        console.log(
+            "1. Intentando iniciar sesión..."
+        );
+
+        const userCredential =
+            await signInWithEmailAndPassword(
+                auth,
+                email,
+                password
+            );
+
+        console.log(
+            "2. Authentication OK"
+        );
+
+        const user =
+            userCredential.user;
+
+        console.log(
+            "UID:",
+            user.uid
+        );
+
+        console.log(
+            "3. Buscando perfil en Firestore..."
+        );
+
+        const userRef =
+            doc(
+                db,
+                "users",
+                user.uid
+            );
+
+        const userSnapshot =
+            await getDoc(userRef);
+
+        console.log(
+            "4. Resultado Firestore:",
+            userSnapshot.exists()
+        );
+
+        if (!userSnapshot.exists()) {
+
+            showAuthMessage(
+                "La cuenta existe, pero no tiene perfil en Firestore.",
+                true
+            );
+
+            console.error(
+                "No existe users/" +
+                user.uid
+            );
+
+            await signOut(auth);
+
+            return;
+        }
+
+        currentUser = user;
+
+        currentProfile =
+            userSnapshot.data();
+
+        console.log(
+            "5. Perfil:",
+            currentProfile
+        );
+
+        currentUserElement.textContent =
+            "@" +
+            currentProfile.username;
+
+        showApp();
+
+        console.log(
+            "6. Aplicación abierta correctamente"
+        );
+
+        await loadConversations();
+
+    } catch (error) {
+
+        console.error(
+            "ERROR LOGIN:",
+            error
+        );
+
+        console.error(
+            "CÓDIGO:",
+            error.code
+        );
+
+        console.error(
+            "MENSAJE:",
+            error.message
+        );
+
+        let message =
+            error.code +
+            " - " +
+            error.message;
+
+        if (
+            error.code ===
+            "auth/invalid-credential"
+        ) {
+
+            message =
+                "Correo o contraseña incorrectos.";
+        }
+
+        else if (
+            error.code ===
+            "auth/wrong-password"
+        ) {
+
+            message =
+                "Contraseña incorrecta.";
+        }
+
+        else if (
+            error.code ===
+            "auth/user-not-found"
+        ) {
+
+            message =
+                "No existe una cuenta con ese correo.";
+        }
+
+        else if (
+            error.code ===
+            "auth/invalid-email"
+        ) {
+
+            message =
+                "El correo electrónico no es válido.";
+        }
+
+        else if (
+            error.code ===
+            "auth/network-request-failed"
+        ) {
+
+            message =
+                "No se pudo conectar con Firebase.";
+        }
+
+        else if (
+            error.code ===
+            "permission-denied"
+        ) {
+
+            message =
+                "Firebase rechazó el acceso a Firestore.";
+        }
+
+        showAuthMessage(
+            message,
+            true
+        );
+
+    } finally {
+
+        loginButton.disabled = false;
+    }
+}
+
+
+loginButton.addEventListener(
+    "click",
+    login
+);
+
+
+/* =========================
+   ENTER PARA LOGIN
+========================= */
+
+loginPassword.addEventListener(
+    "keydown",
+    event => {
+
+        if (event.key === "Enter") {
+
+            event.preventDefault();
+
+            login();
+        }
+    }
+);
+
+
+/* =========================
+   ENTER PARA REGISTRO
+========================= */
+
+registerPassword.addEventListener(
+    "keydown",
+    event => {
+
+        if (event.key === "Enter") {
+
+            event.preventDefault();
+
+            register();
+        }
+    }
+);
 
 
 /* =========================
@@ -447,20 +692,17 @@ async function loadUserProfile(user) {
         user.uid
     );
 
-    const userRef = doc(
-        db,
-        "users",
-        user.uid
-    );
+    const userRef =
+        doc(
+            db,
+            "users",
+            user.uid
+        );
 
     const userSnapshot =
         await getDoc(userRef);
 
     if (!userSnapshot.exists()) {
-
-        console.warn(
-            "El usuario existe en Authentication pero no tiene perfil."
-        );
 
         return null;
     }
@@ -500,7 +742,8 @@ async function enterApp() {
         }
 
         currentUserElement.textContent =
-            "@" + currentProfile.username;
+            "@" +
+            currentProfile.username;
 
         showApp();
 
@@ -514,7 +757,7 @@ async function enterApp() {
         );
 
         showAuthMessage(
-            "No se pudo cargar tu perfil: " +
+            "Error cargando tu cuenta: " +
             error.message,
             true
         );
@@ -523,7 +766,7 @@ async function enterApp() {
 
 
 /* =========================
-   ESTADO DE AUTENTICACIÓN
+   ESTADO DE AUTH
 ========================= */
 
 onAuthStateChanged(
@@ -547,17 +790,10 @@ onAuthStateChanged(
 
         currentUser = user;
 
-        /*
-         No cargamos el perfil mientras se está
-         creando una cuenta porque register()
-         todavía tiene que guardar el documento
-         en Firestore.
-        */
-
         if (creatingAccount) {
 
             console.log(
-                "Cuenta en creación. Esperando Firestore..."
+                "La cuenta todavía se está creando."
             );
 
             return;
@@ -566,7 +802,9 @@ onAuthStateChanged(
         try {
 
             currentProfile =
-                await loadUserProfile(user);
+                await loadUserProfile(
+                    user
+                );
 
             if (!currentProfile) {
 
@@ -584,7 +822,7 @@ onAuthStateChanged(
         } catch (error) {
 
             console.error(
-                "Error de autenticación:",
+                "Error cargando autenticación:",
                 error
             );
 
@@ -609,25 +847,35 @@ logoutButton.addEventListener(
         try {
 
             if (unsubscribeChats) {
+
                 unsubscribeChats();
+
                 unsubscribeChats = null;
             }
 
             if (unsubscribeMessages) {
+
                 unsubscribeMessages();
+
                 unsubscribeMessages = null;
             }
 
             currentConversationId = null;
+
             currentOtherUser = null;
+
+            currentProfile = null;
 
             await signOut(auth);
 
             chatWindow.classList.add("hidden");
+
             welcome.classList.remove("hidden");
 
             messages.innerHTML = "";
+
             chatList.innerHTML = "";
+
             searchResults.innerHTML = "";
 
         } catch (error) {
@@ -653,10 +901,11 @@ userSearch.addEventListener(
 
         clearTimeout(searchTimeout);
 
-        searchTimeout = setTimeout(
-            searchUsers,
-            300
-        );
+        searchTimeout =
+            setTimeout(
+                searchUsers,
+                300
+            );
     }
 );
 
@@ -682,7 +931,10 @@ async function searchUsers() {
 
         const usersSnapshot =
             await getDocs(
-                collection(db, "users")
+                collection(
+                    db,
+                    "users"
+                )
             );
 
         const foundUsers = [];
@@ -697,6 +949,7 @@ async function searchUsers() {
                     userDocument.id ===
                     currentUser.uid
                 ) {
+
                     return;
                 }
 
@@ -708,13 +961,20 @@ async function searchUsers() {
                     username.toLowerCase();
 
                 if (
-                    usernameLower.includes(text)
+                    usernameLower.includes(
+                        text
+                    )
                 ) {
 
                     foundUsers.push({
-                        id: userDocument.id,
-                        username: username,
-                        email: data.email || ""
+                        id:
+                            userDocument.id,
+
+                        username:
+                            username,
+
+                        email:
+                            data.email || ""
                     });
                 }
             }
@@ -728,39 +988,47 @@ async function searchUsers() {
             return;
         }
 
-        foundUsers.forEach(user => {
+        foundUsers.forEach(
+            user => {
 
-            const element =
-                document.createElement("div");
-
-            element.className =
-                "search-result";
-
-            element.innerHTML = `
-                <div class="search-result-name">
-                    ${escapeHtml(user.username)}
-                </div>
-                <div class="search-result-email">
-                    ${escapeHtml(user.email)}
-                </div>
-            `;
-
-            element.addEventListener(
-                "click",
-                () => {
-
-                    openConversationWithUser(
-                        user.id,
-                        user.username
+                const element =
+                    document.createElement(
+                        "div"
                     );
 
-                    userSearch.value = "";
-                    searchResults.innerHTML = "";
-                }
-            );
+                element.className =
+                    "search-result";
 
-            searchResults.appendChild(element);
-        });
+                element.innerHTML = `
+                    <div class="search-result-name">
+                        ${escapeHtml(user.username)}
+                    </div>
+
+                    <div class="search-result-email">
+                        ${escapeHtml(user.email)}
+                    </div>
+                `;
+
+                element.addEventListener(
+                    "click",
+                    () => {
+
+                        openConversationWithUser(
+                            user.id,
+                            user.username
+                        );
+
+                        userSearch.value = "";
+
+                        searchResults.innerHTML = "";
+                    }
+                );
+
+                searchResults.appendChild(
+                    element
+                );
+            }
+        );
 
     } catch (error) {
 
@@ -809,8 +1077,13 @@ async function openConversationWithUser(
         chatStatus.textContent =
             "Chat";
 
-        welcome.classList.add("hidden");
-        chatWindow.classList.remove("hidden");
+        welcome.classList.add(
+            "hidden"
+        );
+
+        chatWindow.classList.remove(
+            "hidden"
+        );
 
         await loadMessages(
             conversationId
@@ -855,7 +1128,10 @@ async function findOrCreateConversation(
     const snapshot =
         await getDocs(q);
 
-    for (const conversationDocument of snapshot.docs) {
+    for (
+        const conversationDocument
+        of snapshot.docs
+    ) {
 
         const data =
             conversationDocument.data();
@@ -865,7 +1141,9 @@ async function findOrCreateConversation(
 
         if (
             members.length === 2 &&
-            members.includes(otherUserId)
+            members.includes(
+                otherUserId
+            )
         ) {
 
             return conversationDocument.id;
@@ -880,9 +1158,15 @@ async function findOrCreateConversation(
                     currentUser.uid,
                     otherUserId
                 ],
-                createdAt: serverTimestamp(),
-                lastMessage: "",
-                lastMessageAt: serverTimestamp()
+
+                createdAt:
+                    serverTimestamp(),
+
+                lastMessage:
+                    "",
+
+                lastMessageAt:
+                    serverTimestamp()
             }
         );
 
@@ -901,6 +1185,7 @@ async function loadMessages(
     if (unsubscribeMessages) {
 
         unsubscribeMessages();
+
         unsubscribeMessages = null;
     }
 
@@ -971,10 +1256,13 @@ async function loadMessages(
 function displayMessage(data) {
 
     const element =
-        document.createElement("div");
+        document.createElement(
+            "div"
+        );
 
     const isMine =
-        data.senderId === currentUser.uid;
+        data.senderId ===
+        currentUser.uid;
 
     element.className =
         isMine
@@ -982,7 +1270,9 @@ function displayMessage(data) {
             : "message other";
 
     const content =
-        document.createElement("div");
+        document.createElement(
+            "div"
+        );
 
     content.className =
         "message-content";
@@ -990,7 +1280,9 @@ function displayMessage(data) {
     content.textContent =
         data.content || "";
 
-    element.appendChild(content);
+    element.appendChild(
+        content
+    );
 
     if (data.createdAt) {
 
@@ -1007,7 +1299,9 @@ function displayMessage(data) {
             );
 
         const timeElement =
-            document.createElement("div");
+            document.createElement(
+                "div"
+            );
 
         timeElement.className =
             "message-time";
@@ -1020,7 +1314,9 @@ function displayMessage(data) {
         );
     }
 
-    messages.appendChild(element);
+    messages.appendChild(
+        element
+    );
 }
 
 
@@ -1060,9 +1356,14 @@ async function sendMessage() {
         await addDoc(
             messagesRef,
             {
-                senderId: currentUser.uid,
-                content: content,
-                createdAt: serverTimestamp()
+                senderId:
+                    currentUser.uid,
+
+                content:
+                    content,
+
+                createdAt:
+                    serverTimestamp()
             }
         );
 
@@ -1073,8 +1374,11 @@ async function sendMessage() {
                 currentConversationId
             ),
             {
-                lastMessage: content,
-                lastMessageAt: serverTimestamp()
+                lastMessage:
+                    content,
+
+                lastMessageAt:
+                    serverTimestamp()
             },
             {
                 merge: true
@@ -1128,7 +1432,7 @@ messageInput.addEventListener(
 
 
 /* =========================
-   CARGAR LISTA DE CHATS
+   CARGAR CHATS
 ========================= */
 
 async function loadConversations() {
@@ -1140,6 +1444,7 @@ async function loadConversations() {
     if (unsubscribeChats) {
 
         unsubscribeChats();
+
         unsubscribeChats = null;
     }
 
@@ -1204,6 +1509,7 @@ async function loadConversations() {
                         if (
                             !otherUserSnapshot.exists()
                         ) {
+
                             continue;
                         }
 
@@ -1229,7 +1535,7 @@ async function loadConversations() {
                     } catch (error) {
 
                         console.error(
-                            "Error cargando usuario del chat:",
+                            "Error cargando usuario:",
                             error
                         );
                     }
@@ -1242,6 +1548,7 @@ async function loadConversations() {
                             !a.lastMessageAt &&
                             !b.lastMessageAt
                         ) {
+
                             return 0;
                         }
 
@@ -1289,7 +1596,7 @@ async function loadConversations() {
 
 
 /* =========================
-   CREAR ELEMENTO DEL CHAT
+   ELEMENTO DE CHAT
 ========================= */
 
 function createChatElement(
@@ -1297,7 +1604,9 @@ function createChatElement(
 ) {
 
     const element =
-        document.createElement("div");
+        document.createElement(
+            "div"
+        );
 
     element.className =
         "chat-item";
@@ -1330,6 +1639,7 @@ function createChatElement(
                 if (
                     !conversationSnapshot.exists()
                 ) {
+
                     return;
                 }
 
@@ -1347,7 +1657,9 @@ function createChatElement(
                     conversation.id;
 
                 currentOtherUser = {
-                    id: otherUserId,
+                    id:
+                        otherUserId,
+
                     username:
                         conversation.username
                 };
@@ -1358,8 +1670,13 @@ function createChatElement(
                 chatStatus.textContent =
                     "Chat";
 
-                welcome.classList.add("hidden");
-                chatWindow.classList.remove("hidden");
+                welcome.classList.add(
+                    "hidden"
+                );
+
+                chatWindow.classList.remove(
+                    "hidden"
+                );
 
                 await loadMessages(
                     conversation.id
@@ -1377,18 +1694,22 @@ function createChatElement(
         }
     );
 
-    chatList.appendChild(element);
+    chatList.appendChild(
+        element
+    );
 }
 
 
 /* =========================
-   ESCAPAR HTML
+   SEGURIDAD HTML
 ========================= */
 
 function escapeHtml(text) {
 
     const div =
-        document.createElement("div");
+        document.createElement(
+            "div"
+        );
 
     div.textContent =
         text || "";
