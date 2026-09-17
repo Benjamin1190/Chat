@@ -201,9 +201,16 @@ registerButton.addEventListener("click", async () => {
 
     } catch (error) {
 
-        console.error(error);
+    console.error("ERROR FIREBASE:", error);
+    console.error("Código:", error.code);
+    console.error("Mensaje:", error.message);
 
-        let message = "No se pudo crear la cuenta.";
+    let message =
+        "Error: " + error.code + " - " + error.message;
+
+    showAuthMessage(message, true);
+
+} finally {
 
         if (error.code === "auth/email-already-in-use") {
             message = "Ese correo ya está registrado.";
