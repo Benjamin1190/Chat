@@ -23,9 +23,7 @@ import {
   onSnapshot,
   orderBy,
   serverTimestamp,
-  writeBatch,
-  arrayUnion,
-  arrayRemove
+  writeBatch
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
 import {
@@ -109,7 +107,6 @@ const groupName = document.getElementById("groupName");
 const groupUsers = document.getElementById("groupUsers");
 
 const cancelGroupButton = document.getElementById("cancelGroupButton");
-const cancelGroupButtonBottom = document.getElementById("cancelGroupButtonBottom");
 const confirmGroupButton = document.getElementById("confirmGroupButton");
 
 const adminButton = document.getElementById("adminButton");
@@ -145,17 +142,18 @@ let allConversations = [];
 
 let selectedConversationId = null;
 let selectedConversation = null;
+
 let selectedAdminUser = null;
 
 let unsubscribeConversations = null;
 let unsubscribeMessages = null;
+let unsubscribeTyping = null;
 
 let typingTimeout = null;
-let unsubscribeTyping = null;
 
 
 /* =========================================================
-   FUNCIONES GENERALES
+   UTILIDADES
 ========================================================= */
 
 function escapeHtml(text) {
@@ -166,7 +164,9 @@ function escapeHtml(text) {
 
 
 function formatDate(timestamp) {
-  if (!timestamp) return "";
+  if (!timestamp) {
+    return "";
+  }
 
   let date;
 
@@ -188,13 +188,11 @@ function formatDate(timestamp) {
 
 
 function formatCreatedDate(timestamp) {
-  if (!timestamp) return "Desconocida";
-
-  if (timestamp.toDate) {
-    return timestamp.toDate().toLocaleString("es-UY");
+  if (!timestamp || !timestamp.toDate) {
+    return "Desconocida";
   }
 
-  return "Desconocida";
+  return timestamp.toDate().toLocaleString("es-UY");
 }
 
 
@@ -208,14 +206,13 @@ function isAdminUser() {
 
 
 /* =========================================================
-   URLS CLICKEABLES
+   ENLACES CLICKEABLES
 ========================================================= */
 
 function makeLinksClickable(text) {
   const escaped = escapeHtml(text);
 
-  const urlRegex =
-    /((https?:\/\/|www\.)[^\s<]+)/gi;
+  const urlRegex = /((https?:\/\/|www\.)[^\s<]+)/gi;
 
   return escaped.replace(urlRegex, (url) => {
     let href = url;
@@ -237,7 +234,7 @@ function makeLinksClickable(text) {
 
 
 /* =========================================================
-   AUTENTICACIÓN
+   LOGIN / REGISTRO
 ========================================================= */
 
 function showLoginForm() {
@@ -285,29 +282,30 @@ loginForm?.addEventListener("submit", async (event) => {
   authMessage.textContent = "Iniciando sesión...";
 
   try {
-    await signInWithEmailAndPassword(auth, email, password);
+    await signInWithEmailAndPassword(
+      auth,
+      email,
+      password
+    );
 
-    authMessage.textContent = "";
     loginForm.reset();
+    authMessage.textContent = "";
 
   } catch (error) {
     console.error(error);
 
-    switch (error.code) {
-      case "auth/invalid-credential":
-        authMessage.textContent = "Correo o contraseña incorrectos.";
-        break;
-
-      case "auth/invalid-email":
-        authMessage.textContent = "El correo no es válido.";
-        break;
-
-      case "auth/too-many-requests":
-        authMessage.textContent = "Demasiados intentos. Esperá un momento.";
-        break;
-
-      default:
-        authMessage.textContent = error.message;
+    if (error.code === "auth/invalid-credential") {
+      authMessage.textContent =
+        "Correo o contraseña incorrectos.";
+    } else if (error.code === "auth/invalid-email") {
+      authMessage.textContent =
+        "El correo no es válido.";
+    } else if (error.code === "auth/too-many-requests") {
+      authMessage.textContent =
+        "Demasiados intentos. Esperá un momento.";
+    } else {
+      authMessage.textContent =
+        error.message;
     }
   }
 
@@ -323,95 +321,108 @@ registerForm?.addEventListener("submit", async (event) => {
   const password = registerPassword.value;
 
   if (!email || !username || !password) {
-    authMessage.textContent = "Completá todos los campos.";
+    authMessage.textContent =
+      "Completá todos los campos.";
     return;
   }
 
   if (username.length < 3) {
-    authMessage.textContent = "El nombre debe tener al menos 3 caracteres.";
+    authMessage.textContent =
+      "El nombre debe tener al menos 3 caracteres.";
     return;
   }
 
   if (password.length < 6) {
-    authMessage.textContent = "La contraseña debe tener al menos 6 caracteres.";
+    authMessage.textContent =
+      "La contraseña debe tener al menos 6 caracteres.";
     return;
   }
 
   registerButton.disabled = true;
-  authMessage.textContent = "Creando cuenta...";
+  authMessage.textContent =
+    "Comprobando nombre de usuario...";
 
   try {
-    const usernameLower = username.toLowerCase();
-
-    /*
-      Primero comprobamos que el nombre de usuario no exista.
-      Esto NO requiere ser administrador.
-    */
+    const usernameLower =
+      username.toLowerCase();
 
     const usernameQuery = query(
       collection(db, "users"),
-      where("usernameLower", "==", usernameLower)
+      where(
+        "usernameLower",
+        "==",
+        usernameLower
+      )
     );
 
-    const usernameSnapshot = await getDocs(usernameQuery);
+    const usernameSnapshot =
+      await getDocs(usernameQuery);
 
     if (!usernameSnapshot.empty) {
-      authMessage.textContent = "Ese nombre de usuario ya está usado.";
+      authMessage.textContent =
+        "Ese nombre de usuario ya está usado.";
+
       registerButton.disabled = false;
       return;
     }
 
-    /*
-      Creamos primero la cuenta en Firebase Authentication.
-    */
+    authMessage.textContent =
+      "Creando cuenta...";
 
-    const credential = await createUserWithEmailAndPassword(
-      auth,
-      email,
-      password
-    );
+    const credential =
+      await createUserWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
 
     const user = credential.user;
 
     /*
-      Después creamos el perfil de Firestore.
-      El UID es exactamente el mismo de Authentication.
+      Creamos el perfil inmediatamente después
+      de crear la cuenta de Authentication.
     */
 
-    await setDoc(doc(db, "users", user.uid), {
-      username: username,
-      usernameLower: usernameLower,
-      email: email,
-      createdAt: serverTimestamp()
-    });
+    await setDoc(
+      doc(db, "users", user.uid),
+      {
+        username: username,
+        usernameLower: usernameLower,
+        email: email,
+        createdAt: serverTimestamp()
+      }
+    );
 
-    authMessage.textContent = "Cuenta creada correctamente.";
+    authMessage.textContent =
+      "Cuenta creada correctamente.";
 
     registerForm.reset();
 
   } catch (error) {
-    console.error(error);
+    console.error(
+      "ERROR REGISTRO:",
+      error
+    );
 
-    switch (error.code) {
-      case "auth/email-already-in-use":
-        authMessage.textContent = "Ese correo ya está registrado.";
-        break;
+    if (error.code === "auth/email-already-in-use") {
+      authMessage.textContent =
+        "Ese correo ya está registrado.";
 
-      case "auth/invalid-email":
-        authMessage.textContent = "El correo no es válido.";
-        break;
+    } else if (error.code === "auth/invalid-email") {
+      authMessage.textContent =
+        "El correo no es válido.";
 
-      case "auth/weak-password":
-        authMessage.textContent = "La contraseña es demasiado débil.";
-        break;
+    } else if (error.code === "auth/weak-password") {
+      authMessage.textContent =
+        "La contraseña es demasiado débil.";
 
-      case "permission-denied":
-        authMessage.textContent =
-          "Firebase rechazó la creación del perfil. Revisá las reglas de Firestore.";
-        break;
+    } else if (error.code === "permission-denied") {
+      authMessage.textContent =
+        "Firebase rechazó la creación del perfil.";
 
-      default:
-        authMessage.textContent = error.message;
+    } else {
+      authMessage.textContent =
+        "Error: " + error.message;
     }
   }
 
@@ -441,9 +452,7 @@ onAuthStateChanged(auth, async (user) => {
     authScreen?.classList.remove("hidden");
     app?.classList.add("hidden");
 
-    if (adminPanel) {
-      adminPanel.classList.add("hidden");
-    }
+    adminPanel?.classList.add("hidden");
 
     stopConversationListener();
     stopMessageListener();
@@ -453,24 +462,33 @@ onAuthStateChanged(auth, async (user) => {
   }
 
   try {
-    const profileRef = doc(db, "users", user.uid);
-    const profileSnapshot = await getDoc(profileRef);
+    const profileRef =
+      doc(db, "users", user.uid);
+
+    const profileSnapshot =
+      await getDoc(profileRef);
+
+    /*
+      Si Authentication tiene usuario pero
+      Firestore no tiene perfil, lo reconstruimos.
+    */
 
     if (!profileSnapshot.exists()) {
-      /*
-        Si por alguna razón existe la cuenta en Authentication
-        pero no su perfil, lo creamos automáticamente.
-      */
 
       const fallbackUsername =
-        user.email?.split("@")[0] || "Usuario";
+        user.email?.split("@")[0] ||
+        "Usuario";
 
-      await setDoc(profileRef, {
-        username: fallbackUsername,
-        usernameLower: fallbackUsername.toLowerCase(),
-        email: user.email || "",
-        createdAt: serverTimestamp()
-      });
+      await setDoc(
+        profileRef,
+        {
+          username: fallbackUsername,
+          usernameLower:
+            fallbackUsername.toLowerCase(),
+          email: user.email || "",
+          createdAt: serverTimestamp()
+        }
+      );
 
       currentUserProfile = {
         username: fallbackUsername,
@@ -478,7 +496,9 @@ onAuthStateChanged(auth, async (user) => {
       };
 
     } else {
-      currentUserProfile = profileSnapshot.data();
+
+      currentUserProfile =
+        profileSnapshot.data();
     }
 
     authScreen?.classList.add("hidden");
@@ -486,7 +506,9 @@ onAuthStateChanged(auth, async (user) => {
 
     if (currentUserElement) {
       currentUserElement.textContent =
-        currentUserProfile.username || user.email;
+        currentUserProfile.username ||
+        user.email ||
+        "Usuario";
     }
 
     if (adminButton) {
@@ -498,23 +520,25 @@ onAuthStateChanged(auth, async (user) => {
     }
 
     await loadUsers();
+
     startConversationListener();
 
-    /*
-      Si la URL es /admin, intentamos abrir el panel.
-    */
-
-    if (window.location.pathname === "/admin") {
-      if (isAdminUser()) {
-        openAdminPanel();
-      }
+    if (
+      window.location.pathname === "/admin" &&
+      isAdminUser()
+    ) {
+      openAdminPanel();
     }
 
   } catch (error) {
-    console.error("Error cargando usuario:", error);
+    console.error(
+      "ERROR CARGANDO PERFIL:",
+      error
+    );
 
     authMessage.textContent =
-      "No se pudo cargar tu perfil.";
+      "No se pudo cargar tu perfil: " +
+      error.message;
   }
 });
 
@@ -524,19 +548,22 @@ onAuthStateChanged(auth, async (user) => {
 ========================================================= */
 
 async function loadUsers() {
-  if (!currentUser) return;
+  if (!currentUser) {
+    return;
+  }
 
   try {
-    const snapshot = await getDocs(collection(db, "users"));
+    const snapshot =
+      await getDocs(
+        collection(db, "users")
+      );
 
     allUsers = [];
 
-    snapshot.forEach((docSnapshot) => {
-      const data = docSnapshot.data();
-
+    snapshot.forEach((userDoc) => {
       allUsers.push({
-        uid: docSnapshot.id,
-        ...data
+        uid: userDoc.id,
+        ...userDoc.data()
       });
     });
 
@@ -548,19 +575,30 @@ async function loadUsers() {
     });
 
   } catch (error) {
-    console.error("Error cargando usuarios:", error);
+    console.error(
+      "ERROR CARGANDO USUARIOS:",
+      error
+    );
   }
 }
 
 
 function getUserById(uid) {
-  return allUsers.find((user) => user.uid === uid) || null;
+  return (
+    allUsers.find(
+      (user) => user.uid === uid
+    ) || null
+  );
 }
 
 
 function getUsername(uid) {
   if (uid === currentUser?.uid) {
-    return currentUserProfile?.username || currentUser?.email || "Vos";
+    return (
+      currentUserProfile?.username ||
+      currentUser?.email ||
+      "Vos"
+    );
   }
 
   const user = getUserById(uid);
@@ -570,42 +608,57 @@ function getUsername(uid) {
 
 
 /* =========================================================
-   BÚSQUEDA DE USUARIOS
+   BUSCAR USUARIOS
 ========================================================= */
 
-userSearch?.addEventListener("input", () => {
-  const search = userSearch.value.trim().toLowerCase();
+userSearch?.addEventListener(
+  "input",
+  () => {
 
-  if (!search) {
-    searchResults.innerHTML = "";
-    searchResults.classList.add("hidden");
-    return;
-  }
+    const search =
+      userSearch.value
+        .trim()
+        .toLowerCase();
 
-  const results = allUsers.filter((user) => {
-    if (user.uid === currentUser?.uid) {
-      return false;
+    if (!search) {
+      searchResults.innerHTML = "";
+      searchResults.classList.add("hidden");
+      return;
     }
 
-    const username = (user.username || "").toLowerCase();
-    const email = (user.email || "").toLowerCase();
+    const results =
+      allUsers.filter((user) => {
 
-    return (
-      username.includes(search) ||
-      email.includes(search)
-    );
-  });
+        if (
+          user.uid === currentUser?.uid
+        ) {
+          return false;
+        }
 
-  renderSearchResults(results);
-});
+        const username =
+          (user.username || "")
+            .toLowerCase();
+
+        const email =
+          (user.email || "")
+            .toLowerCase();
+
+        return (
+          username.includes(search) ||
+          email.includes(search)
+        );
+      });
+
+    renderSearchResults(results);
+  }
+);
 
 
 function renderSearchResults(results) {
-  if (!searchResults) return;
-
   searchResults.innerHTML = "";
 
   if (results.length === 0) {
+
     searchResults.innerHTML = `
       <div class="search-empty">
         No se encontraron usuarios.
@@ -617,24 +670,40 @@ function renderSearchResults(results) {
   }
 
   results.forEach((user) => {
-    const element = document.createElement("button");
 
-    element.className = "search-result";
+    const button =
+      document.createElement("button");
 
-    element.innerHTML = `
-      <strong>${escapeHtml(user.username || "Usuario")}</strong>
-      <span>${escapeHtml(user.email || "")}</span>
+    button.className =
+      "search-result";
+
+    button.innerHTML = `
+      <strong>
+        ${escapeHtml(
+          user.username || "Usuario"
+        )}
+      </strong>
+
+      <span>
+        ${escapeHtml(
+          user.email || ""
+        )}
+      </span>
     `;
 
-    element.addEventListener("click", () => {
-      openPrivateConversation(user);
+    button.addEventListener(
+      "click",
+      () => {
 
-      userSearch.value = "";
-      searchResults.innerHTML = "";
-      searchResults.classList.add("hidden");
-    });
+        openPrivateConversation(user);
 
-    searchResults.appendChild(element);
+        userSearch.value = "";
+        searchResults.innerHTML = "";
+        searchResults.classList.add("hidden");
+      }
+    );
+
+    searchResults.appendChild(button);
   });
 
   searchResults.classList.remove("hidden");
@@ -648,54 +717,78 @@ function renderSearchResults(results) {
 function startConversationListener() {
   stopConversationListener();
 
-  if (!currentUser) return;
+  if (!currentUser) {
+    return;
+  }
 
-  const conversationsQuery = query(
-    collection(db, "conversations"),
-    where("members", "array-contains", currentUser.uid)
-  );
+  const conversationsQuery =
+    query(
+      collection(db, "conversations"),
+      where(
+        "members",
+        "array-contains",
+        currentUser.uid
+      )
+    );
 
-  unsubscribeConversations = onSnapshot(
-    conversationsQuery,
-    async (snapshot) => {
-      allConversations = [];
+  unsubscribeConversations =
+    onSnapshot(
+      conversationsQuery,
+      (snapshot) => {
 
-      snapshot.forEach((docSnapshot) => {
-        allConversations.push({
-          id: docSnapshot.id,
-          ...docSnapshot.data()
+        allConversations = [];
+
+        snapshot.forEach((conversationDoc) => {
+
+          allConversations.push({
+            id: conversationDoc.id,
+            ...conversationDoc.data()
+          });
         });
-      });
 
-      allConversations.sort((a, b) => {
-        const timeA = a.lastMessageAt?.toMillis?.() || 0;
-        const timeB = b.lastMessageAt?.toMillis?.() || 0;
+        allConversations.sort(
+          (a, b) => {
 
-        return timeB - timeA;
-      });
+            const timeA =
+              a.lastMessageAt?.toMillis?.() ||
+              0;
 
-      renderConversationList();
+            const timeB =
+              b.lastMessageAt?.toMillis?.() ||
+              0;
 
-      /*
-        Si el chat actual cambió, actualizamos su título.
-      */
-
-      if (selectedConversationId) {
-        const updated = allConversations.find(
-          (conversation) =>
-            conversation.id === selectedConversationId
+            return timeB - timeA;
+          }
         );
 
-        if (updated) {
-          selectedConversation = updated;
-          updateChatHeader();
+        renderConversationList();
+
+        if (selectedConversationId) {
+
+          const updated =
+            allConversations.find(
+              (conversation) =>
+                conversation.id ===
+                selectedConversationId
+            );
+
+          if (updated) {
+
+            selectedConversation =
+              updated;
+
+            updateChatHeader();
+          }
         }
+      },
+      (error) => {
+
+        console.error(
+          "ERROR CONVERSACIONES:",
+          error
+        );
       }
-    },
-    (error) => {
-      console.error("Error escuchando conversaciones:", error);
-    }
-  );
+    );
 }
 
 
@@ -708,11 +801,10 @@ function stopConversationListener() {
 
 
 function renderConversationList() {
-  if (!chatList) return;
-
   chatList.innerHTML = "";
 
   if (allConversations.length === 0) {
+
     chatList.innerHTML = `
       <div class="chat-list-empty">
         No tenés conversaciones todavía.
@@ -722,61 +814,118 @@ function renderConversationList() {
     return;
   }
 
-  allConversations.forEach((conversation) => {
-    const element = document.createElement("button");
+  allConversations.forEach(
+    (conversation) => {
 
-    element.className = "chat-list-item";
+      const button =
+        document.createElement("button");
 
-    const title = getConversationTitle(conversation);
+      button.className =
+        "chat-list-item";
 
-    const preview =
-      conversation.lastMessage || "Sin mensajes";
+      const title =
+        getConversationTitle(
+          conversation
+        );
 
-    element.innerHTML = `
-      <div class="chat-list-main">
-        <strong>${escapeHtml(title)}</strong>
-        <span>${escapeHtml(preview)}</span>
-      </div>
+      const preview =
+        conversation.lastMessage ||
+        "Sin mensajes";
 
-      <div class="chat-list-time">
-        ${formatDate(conversation.lastMessageAt)}
-      </div>
-    `;
+      button.innerHTML = `
+        <div class="chat-list-main">
 
-    element.addEventListener("click", () => {
-      openConversation(conversation);
-    });
+          <strong>
+            ${escapeHtml(title)}
+          </strong>
 
-    chatList.appendChild(element);
-  });
+          <span>
+            ${escapeHtml(preview)}
+          </span>
+
+        </div>
+
+        <div class="chat-list-time">
+          ${formatDate(
+            conversation.lastMessageAt
+          )}
+        </div>
+      `;
+
+      button.addEventListener(
+        "click",
+        () => {
+          openConversation(
+            conversation
+          );
+        }
+      );
+
+      chatList.appendChild(button);
+    }
+  );
 }
 
 
-function getConversationTitle(conversation) {
-  if (conversation.type === "group") {
-    return conversation.name || "Grupo";
+function getConversationTitle(
+  conversation
+) {
+
+  if (
+    conversation.type === "group"
+  ) {
+    return (
+      conversation.name ||
+      "Grupo"
+    );
   }
 
-  const otherUid = conversation.members?.find(
-    (uid) => uid !== currentUser?.uid
-  );
+  const otherUid =
+    conversation.members?.find(
+      (uid) =>
+        uid !== currentUser?.uid
+    );
 
-  return getUsername(otherUid) || "Chat";
+  return (
+    getUsername(otherUid) ||
+    "Chat"
+  );
 }
 
 
-async function openPrivateConversation(user) {
-  if (!currentUser || !user) return;
+async function openPrivateConversation(
+  user
+) {
 
-  const existing = allConversations.find((conversation) => {
-    return (
-      conversation.type === "private" &&
-      Array.isArray(conversation.members) &&
-      conversation.members.length === 2 &&
-      conversation.members.includes(currentUser.uid) &&
-      conversation.members.includes(user.uid)
+  if (!currentUser || !user) {
+    return;
+  }
+
+  const existing =
+    allConversations.find(
+      (conversation) => {
+
+        return (
+          conversation.type ===
+            "private" &&
+
+          Array.isArray(
+            conversation.members
+          ) &&
+
+          conversation.members.length ===
+            2 &&
+
+          conversation.members.includes(
+            currentUser.uid
+          ) &&
+
+          conversation.members.includes(
+            user.uid
+          )
+        );
+      }
     );
-  });
 
   if (existing) {
     openConversation(existing);
@@ -784,65 +933,113 @@ async function openPrivateConversation(user) {
   }
 
   try {
-    const conversationRef = await addDoc(
-      collection(db, "conversations"),
-      {
-        type: "private",
-        members: [currentUser.uid, user.uid],
-        createdAt: serverTimestamp(),
-        lastMessage: "",
-        lastMessageAt: serverTimestamp()
-      }
-    );
 
-    const newConversation = {
+    const conversationRef =
+      await addDoc(
+        collection(
+          db,
+          "conversations"
+        ),
+        {
+          type: "private",
+
+          members: [
+            currentUser.uid,
+            user.uid
+          ],
+
+          createdAt:
+            serverTimestamp(),
+
+          lastMessage: "",
+
+          lastMessageAt:
+            serverTimestamp()
+        }
+      );
+
+    const conversation = {
       id: conversationRef.id,
       type: "private",
-      members: [currentUser.uid, user.uid],
+      members: [
+        currentUser.uid,
+        user.uid
+      ],
       lastMessage: "",
       lastMessageAt: null
     };
 
-    openConversation(newConversation);
+    openConversation(
+      conversation
+    );
 
   } catch (error) {
-    console.error("Error creando conversación:", error);
+
+    console.error(
+      "ERROR CREANDO CHAT:",
+      error
+    );
+
+    alert(
+      "No se pudo crear el chat: " +
+      error.message
+    );
   }
 }
 
 
-function openConversation(conversation) {
-  selectedConversation = conversation;
-  selectedConversationId = conversation.id;
+function openConversation(
+  conversation
+) {
+
+  selectedConversation =
+    conversation;
+
+  selectedConversationId =
+    conversation.id;
 
   welcome?.classList.add("hidden");
   chatWindow?.classList.remove("hidden");
 
   updateChatHeader();
 
-  startMessageListener(conversation.id);
-  startTypingListener(conversation.id);
+  startMessageListener(
+    conversation.id
+  );
+
+  startTypingListener(
+    conversation.id
+  );
 }
 
 
 function updateChatHeader() {
-  if (!selectedConversation) return;
 
-  if (selectedConversation.type === "group") {
+  if (!selectedConversation) {
+    return;
+  }
+
+  if (
+    selectedConversation.type ===
+    "group"
+  ) {
+
     chatTitle.textContent =
-      selectedConversation.name || "Grupo";
+      selectedConversation.name ||
+      "Grupo";
 
   } else {
+
     const otherUid =
       selectedConversation.members?.find(
-        (uid) => uid !== currentUser?.uid
+        (uid) =>
+          uid !== currentUser?.uid
       );
 
     chatTitle.textContent =
-      getUsername(otherUid) || "Usuario";
+      getUsername(otherUid) ||
+      "Usuario";
   }
-
-  chatStatus.textContent = "";
 }
 
 
@@ -850,32 +1047,45 @@ function updateChatHeader() {
    MENSAJES
 ========================================================= */
 
-function startMessageListener(conversationId) {
+function startMessageListener(
+  conversationId
+) {
+
   stopMessageListener();
 
-  const messagesQuery = query(
-    collection(
-      db,
-      "conversations",
-      conversationId,
-      "messages"
-    ),
-    orderBy("createdAt", "asc")
-  );
+  const messagesQuery =
+    query(
+      collection(
+        db,
+        "conversations",
+        conversationId,
+        "messages"
+      ),
+      orderBy(
+        "createdAt",
+        "asc"
+      )
+    );
 
-  unsubscribeMessages = onSnapshot(
-    messagesQuery,
-    (snapshot) => {
-      renderMessages(snapshot);
-    },
-    (error) => {
-      console.error("Error escuchando mensajes:", error);
-    }
-  );
+  unsubscribeMessages =
+    onSnapshot(
+      messagesQuery,
+      (snapshot) => {
+        renderMessages(snapshot);
+      },
+      (error) => {
+
+        console.error(
+          "ERROR MENSAJES:",
+          error
+        );
+      }
+    );
 }
 
 
 function stopMessageListener() {
+
   if (unsubscribeMessages) {
     unsubscribeMessages();
     unsubscribeMessages = null;
@@ -883,93 +1093,149 @@ function stopMessageListener() {
 }
 
 
-function renderMessages(snapshot) {
-  if (!messagesElement) return;
+function renderMessages(
+  snapshot
+) {
 
   messagesElement.innerHTML = "";
 
-  snapshot.forEach((docSnapshot) => {
-    const message = {
-      id: docSnapshot.id,
-      ...docSnapshot.data()
-    };
+  snapshot.forEach(
+    (messageDoc) => {
 
-    const element = document.createElement("div");
+      const message = {
+        id: messageDoc.id,
+        ...messageDoc.data()
+      };
 
-    const ownMessage =
-      message.senderId === currentUser?.uid;
+      const ownMessage =
+        message.senderId ===
+        currentUser?.uid;
 
-    element.className =
-      ownMessage
-        ? "message own"
-        : "message";
+      /*
+        Primero usamos senderName guardado
+        en el mensaje.
+        Si es un mensaje viejo,
+        buscamos el usuario.
+      */
 
-    const senderName =
-      getUsername(message.senderId);
+      const senderName =
+        message.senderName ||
+        getUsername(
+          message.senderId
+        ) ||
+        "Usuario";
 
-    const senderHtml =
-      selectedConversation?.type === "group" && !ownMessage
-        ? `<div class="message-sender">${escapeHtml(senderName)}</div>`
-        : "";
+      const element =
+        document.createElement("div");
 
-    const deleteButton =
-      ownMessage
-        ? `
+      element.className =
+        ownMessage
+          ? "message own"
+          : "message";
+
+      let senderHtml = "";
+
+      if (
+        selectedConversation?.type ===
+          "group" &&
+        !ownMessage
+      ) {
+
+        senderHtml = `
+          <div class="message-sender">
+            ${escapeHtml(senderName)}
+          </div>
+        `;
+      }
+
+      let deleteHtml = "";
+
+      if (ownMessage) {
+
+        deleteHtml = `
           <button
             class="delete-message"
-            data-message-id="${message.id}"
             title="Eliminar mensaje"
           >
             🗑
           </button>
-        `
-        : "";
-
-    element.innerHTML = `
-      <div class="message-content">
-        ${senderHtml}
-
-        <div class="message-text">
-          ${makeLinksClickable(message.content || "")}
-        </div>
-
-        <div class="message-footer">
-          <span class="message-time">
-            ${formatDate(message.createdAt)}
-          </span>
-
-          ${deleteButton}
-        </div>
-      </div>
-    `;
-
-    const deleteButtonElement =
-      element.querySelector(".delete-message");
-
-    deleteButtonElement?.addEventListener(
-      "click",
-      async (event) => {
-        event.stopPropagation();
-
-        await deleteOwnMessage(message.id);
+        `;
       }
-    );
 
-    messagesElement.appendChild(element);
-  });
+      element.innerHTML = `
+        <div class="message-content">
+
+          ${senderHtml}
+
+          <div class="message-text">
+            ${makeLinksClickable(
+              message.content || ""
+            )}
+          </div>
+
+          <div class="message-footer">
+
+            <span class="message-time">
+              ${formatDate(
+                message.createdAt
+              )}
+            </span>
+
+            ${deleteHtml}
+
+          </div>
+
+        </div>
+      `;
+
+      const deleteButton =
+        element.querySelector(
+          ".delete-message"
+        );
+
+      deleteButton?.addEventListener(
+        "click",
+        async (event) => {
+
+          event.stopPropagation();
+
+          await deleteOwnMessage(
+            message.id
+          );
+        }
+      );
+
+      messagesElement.appendChild(
+        element
+      );
+    }
+  );
 
   messagesElement.scrollTop =
     messagesElement.scrollHeight;
 }
 
 
+/* =========================================================
+   ENVIAR MENSAJE
+========================================================= */
+
 async function sendMessage() {
-  if (!currentUser) return;
-  if (!selectedConversationId) return;
 
-  const content = messageInput.value.trim();
+  if (!currentUser) {
+    return;
+  }
 
-  if (!content) return;
+  if (!selectedConversationId) {
+    return;
+  }
+
+  const content =
+    messageInput.value.trim();
+
+  if (!content) {
+    return;
+  }
 
   if (content.length > 4000) {
     return;
@@ -978,11 +1244,11 @@ async function sendMessage() {
   sendButton.disabled = true;
 
   try {
-    const conversationRef = doc(
-      db,
-      "conversations",
-      selectedConversationId
-    );
+
+    const senderName =
+      currentUserProfile?.username ||
+      currentUser.email ||
+      "Usuario";
 
     await addDoc(
       collection(
@@ -992,16 +1258,34 @@ async function sendMessage() {
         "messages"
       ),
       {
-        senderId: currentUser.uid,
-        content: content,
-        createdAt: serverTimestamp()
+        senderId:
+          currentUser.uid,
+
+        senderName:
+          senderName,
+
+        content:
+          content,
+
+        createdAt:
+          serverTimestamp()
       }
     );
 
-    await updateDoc(conversationRef, {
-      lastMessage: content,
-      lastMessageAt: serverTimestamp()
-    });
+    await updateDoc(
+      doc(
+        db,
+        "conversations",
+        selectedConversationId
+      ),
+      {
+        lastMessage:
+          content,
+
+        lastMessageAt:
+          serverTimestamp()
+      }
+    );
 
     await setTyping(false);
 
@@ -1010,7 +1294,16 @@ async function sendMessage() {
     updateCharacterCounter();
 
   } catch (error) {
-    console.error("Error enviando mensaje:", error);
+
+    console.error(
+      "ERROR ENVIANDO MENSAJE:",
+      error
+    );
+
+    alert(
+      "No se pudo enviar el mensaje: " +
+      error.message
+    );
   }
 
   sendButton.disabled = false;
@@ -1019,177 +1312,295 @@ async function sendMessage() {
 }
 
 
-sendButton?.addEventListener("click", sendMessage);
+sendButton?.addEventListener(
+  "click",
+  sendMessage
+);
 
 
-messageInput?.addEventListener("keydown", (event) => {
-  if (event.key === "Enter" && !event.shiftKey) {
-    event.preventDefault();
-    sendMessage();
+messageInput?.addEventListener(
+  "keydown",
+  (event) => {
+
+    if (
+      event.key === "Enter" &&
+      !event.shiftKey
+    ) {
+
+      event.preventDefault();
+
+      sendMessage();
+    }
   }
-});
+);
 
+
+/* =========================================================
+   CONTADOR
+========================================================= */
 
 function updateCharacterCounter() {
-  if (!characterCounter || !messageInput) return;
+
+  if (
+    !characterCounter ||
+    !messageInput
+  ) {
+    return;
+  }
 
   characterCounter.textContent =
     `${messageInput.value.length}/4000`;
 }
 
 
-messageInput?.addEventListener("input", () => {
-  updateCharacterCounter();
-  handleTyping();
-});
+messageInput?.addEventListener(
+  "input",
+  () => {
+
+    updateCharacterCounter();
+
+    handleTyping();
+  }
+);
 
 
-async function deleteOwnMessage(messageId) {
-  if (!selectedConversationId || !currentUser) return;
+/* =========================================================
+   BORRAR MENSAJE PROPIO
+========================================================= */
+
+async function deleteOwnMessage(
+  messageId
+) {
+
+  if (
+    !selectedConversationId ||
+    !currentUser
+  ) {
+    return;
+  }
 
   try {
-    const messageRef = doc(
-      db,
-      "conversations",
-      selectedConversationId,
-      "messages",
-      messageId
+
+    const messageRef =
+      doc(
+        db,
+        "conversations",
+        selectedConversationId,
+        "messages",
+        messageId
+      );
+
+    const snapshot =
+      await getDoc(messageRef);
+
+    if (!snapshot.exists()) {
+      return;
+    }
+
+    const message =
+      snapshot.data();
+
+    if (
+      message.senderId !==
+      currentUser.uid
+    ) {
+      return;
+    }
+
+    await deleteDoc(
+      messageRef
     );
 
-    const messageSnapshot = await getDoc(messageRef);
-
-    if (!messageSnapshot.exists()) {
-      return;
-    }
-
-    const message = messageSnapshot.data();
-
-    if (message.senderId !== currentUser.uid) {
-      return;
-    }
-
-    await deleteDoc(messageRef);
-
   } catch (error) {
-    console.error("Error eliminando mensaje:", error);
+
+    console.error(
+      "ERROR BORRANDO MENSAJE:",
+      error
+    );
   }
 }
 
 
 /* =========================================================
-   ESCRIBIENDO...
+   ESCRIBIENDO
 ========================================================= */
 
-async function setTyping(isTyping) {
-  if (!currentUser || !selectedConversationId) {
+async function setTyping(
+  isTyping
+) {
+
+  if (
+    !currentUser ||
+    !selectedConversationId
+  ) {
     return;
   }
 
-  const typingRef = doc(
-    db,
-    "conversations",
-    selectedConversationId,
-    "typing",
-    currentUser.uid
-  );
+  const typingRef =
+    doc(
+      db,
+      "conversations",
+      selectedConversationId,
+      "typing",
+      currentUser.uid
+    );
 
-  if (isTyping) {
-    await setDoc(typingRef, {
-      uid: currentUser.uid,
-      username:
-        currentUserProfile?.username ||
-        currentUser.email ||
-        "Usuario",
-      updatedAt: serverTimestamp()
-    });
-  } else {
-    try {
-      await deleteDoc(typingRef);
-    } catch (error) {
-      console.error(error);
+  try {
+
+    if (isTyping) {
+
+      await setDoc(
+        typingRef,
+        {
+          uid:
+            currentUser.uid,
+
+          username:
+            currentUserProfile?.username ||
+            currentUser.email ||
+            "Usuario",
+
+          updatedAt:
+            serverTimestamp()
+        }
+      );
+
+    } else {
+
+      await deleteDoc(
+        typingRef
+      );
     }
+
+  } catch (error) {
+
+    console.error(
+      "ERROR TYPING:",
+      error
+    );
   }
 }
 
 
 function handleTyping() {
-  if (!selectedConversationId) return;
 
-  setTyping(true).catch((error) => {
-    console.error("Error marcando escritura:", error);
-  });
+  if (!selectedConversationId) {
+    return;
+  }
 
-  clearTimeout(typingTimeout);
+  setTyping(true);
 
-  typingTimeout = setTimeout(() => {
-    setTyping(false).catch((error) => {
-      console.error("Error quitando escritura:", error);
-    });
-  }, 2500);
+  clearTimeout(
+    typingTimeout
+  );
+
+  typingTimeout =
+    setTimeout(
+      () => {
+        setTyping(false);
+      },
+      2500
+    );
 }
 
 
-function startTypingListener(conversationId) {
+function startTypingListener(
+  conversationId
+) {
+
   stopTypingListener();
 
-  const typingQuery = collection(
-    db,
-    "conversations",
-    conversationId,
-    "typing"
-  );
+  const typingCollection =
+    collection(
+      db,
+      "conversations",
+      conversationId,
+      "typing"
+    );
 
-  unsubscribeTyping = onSnapshot(
-    typingQuery,
-    (snapshot) => {
-      const writers = [];
+  unsubscribeTyping =
+    onSnapshot(
+      typingCollection,
+      (snapshot) => {
 
-      snapshot.forEach((docSnapshot) => {
-        const data = docSnapshot.data();
+        const writers = [];
 
-        if (data.uid !== currentUser?.uid) {
-          writers.push(
-            data.username ||
-            getUsername(data.uid) ||
-            "Alguien"
-          );
-        }
-      });
+        snapshot.forEach(
+          (typingDoc) => {
 
-      updateTypingText(writers);
-    },
-    (error) => {
-      console.error("Error escuchando typing:", error);
-    }
-  );
+            const data =
+              typingDoc.data();
+
+            if (
+              data.uid !==
+              currentUser?.uid
+            ) {
+
+              writers.push(
+                data.username ||
+                getUsername(
+                  data.uid
+                ) ||
+                "Alguien"
+              );
+            }
+          }
+        );
+
+        updateTypingText(
+          writers
+        );
+      },
+      (error) => {
+
+        console.error(
+          "ERROR TYPING LISTENER:",
+          error
+        );
+      }
+    );
 }
 
 
 function stopTypingListener() {
+
   if (unsubscribeTyping) {
+
     unsubscribeTyping();
+
     unsubscribeTyping = null;
   }
 }
 
 
-function updateTypingText(writers) {
-  if (!chatStatus) return;
+function updateTypingText(
+  writers
+) {
+
+  if (!chatStatus) {
+    return;
+  }
 
   if (writers.length === 0) {
+
     chatStatus.textContent = "";
+
     return;
   }
 
   if (writers.length === 1) {
+
     chatStatus.textContent =
       `${writers[0]} está escribiendo...`;
+
     return;
   }
 
   if (writers.length === 2) {
+
     chatStatus.textContent =
       `${writers[0]} y ${writers[1]} están escribiendo...`;
+
     return;
   }
 
@@ -1202,54 +1613,96 @@ function updateTypingText(writers) {
    ELIMINAR CONVERSACIÓN
 ========================================================= */
 
-deleteChatButton?.addEventListener("click", async () => {
-  if (!selectedConversationId) return;
+deleteChatButton?.addEventListener(
+  "click",
+  async () => {
 
-  const confirmed = confirm(
-    "¿Querés eliminar esta conversación?"
-  );
+    if (!selectedConversationId) {
+      return;
+    }
 
-  if (!confirmed) return;
+    const confirmed =
+      confirm(
+        "¿Querés eliminar esta conversación?"
+      );
 
-  try {
-    await deleteConversation(selectedConversationId);
+    if (!confirmed) {
+      return;
+    }
 
-    selectedConversationId = null;
-    selectedConversation = null;
+    try {
 
-    stopMessageListener();
-    stopTypingListener();
+      await deleteConversation(
+        selectedConversationId
+      );
 
-    chatWindow?.classList.add("hidden");
-    welcome?.classList.remove("hidden");
+      selectedConversationId =
+        null;
 
-  } catch (error) {
-    console.error("Error eliminando conversación:", error);
+      selectedConversation =
+        null;
+
+      stopMessageListener();
+      stopTypingListener();
+
+      chatWindow?.classList.add("hidden");
+      welcome?.classList.remove("hidden");
+
+    } catch (error) {
+
+      console.error(
+        "ERROR ELIMINANDO CHAT:",
+        error
+      );
+
+      alert(
+        "No se pudo eliminar el chat: " +
+        error.message
+      );
+    }
   }
-});
+);
 
 
-async function deleteConversation(conversationId) {
-  const messagesRef = collection(
-    db,
-    "conversations",
-    conversationId,
-    "messages"
-  );
+async function deleteConversation(
+  conversationId
+) {
 
-  const snapshot = await getDocs(messagesRef);
+  const messagesRef =
+    collection(
+      db,
+      "conversations",
+      conversationId,
+      "messages"
+    );
 
-  let batch = writeBatch(db);
+  const snapshot =
+    await getDocs(
+      messagesRef
+    );
+
+  let batch =
+    writeBatch(db);
+
   let count = 0;
 
-  for (const messageDoc of snapshot.docs) {
-    batch.delete(messageDoc.ref);
+  for (
+    const messageDoc of snapshot.docs
+  ) {
+
+    batch.delete(
+      messageDoc.ref
+    );
+
     count++;
 
     if (count >= 450) {
+
       await batch.commit();
 
-      batch = writeBatch(db);
+      batch =
+        writeBatch(db);
+
       count = 0;
     }
   }
@@ -1259,59 +1712,96 @@ async function deleteConversation(conversationId) {
   }
 
   await deleteDoc(
-    doc(db, "conversations", conversationId)
+    doc(
+      db,
+      "conversations",
+      conversationId
+    )
   );
 }
 
 
 /* =========================================================
-   CREAR GRUPO
+   GRUPOS
 ========================================================= */
 
-createGroupButton?.addEventListener("click", async () => {
-  if (!currentUser) return;
+createGroupButton?.addEventListener(
+  "click",
+  async () => {
 
-  await loadUsers();
+    if (!currentUser) {
+      return;
+    }
 
-  renderGroupUsers();
+    await loadUsers();
 
-  groupName.value = "";
+    renderGroupUsers();
 
-  groupModal?.classList.remove("hidden");
-});
+    groupName.value = "";
+
+    groupModal?.classList.remove(
+      "hidden"
+    );
+  }
+);
 
 
 function renderGroupUsers() {
-  if (!groupUsers) return;
 
   groupUsers.innerHTML = "";
 
   allUsers
-    .filter((user) => user.uid !== currentUser?.uid)
-    .forEach((user) => {
-      const label = document.createElement("label");
+    .filter(
+      (user) =>
+        user.uid !== currentUser?.uid
+    )
+    .forEach(
+      (user) => {
 
-      label.className = "group-user";
+        const label =
+          document.createElement(
+            "label"
+          );
 
-      label.innerHTML = `
-        <input
-          type="checkbox"
-          value="${user.uid}"
-        >
+        label.className =
+          "group-user";
 
-        <span>
-          <strong>${escapeHtml(user.username || "Usuario")}</strong>
-          <small>${escapeHtml(user.email || "")}</small>
-        </span>
-      `;
+        label.innerHTML = `
+          <input
+            type="checkbox"
+            value="${user.uid}"
+          >
 
-      groupUsers.appendChild(label);
-    });
+          <span>
+
+            <strong>
+              ${escapeHtml(
+                user.username ||
+                "Usuario"
+              )}
+            </strong>
+
+            <small>
+              ${escapeHtml(
+                user.email || ""
+              )}
+            </small>
+
+          </span>
+        `;
+
+        groupUsers.appendChild(
+          label
+        );
+      }
+    );
 }
 
 
 function closeGroupModal() {
-  groupModal?.classList.add("hidden");
+  groupModal?.classList.add(
+    "hidden"
+  );
 }
 
 
@@ -1320,84 +1810,133 @@ cancelGroupButton?.addEventListener(
   closeGroupModal
 );
 
-cancelGroupButtonBottom?.addEventListener(
-  "click",
-  closeGroupModal
-);
-
 
 confirmGroupButton?.addEventListener(
   "click",
   async () => {
-    if (!currentUser) return;
 
-    const name = groupName.value.trim();
-
-    if (!name) {
-      alert("Escribí un nombre para el grupo.");
+    if (!currentUser) {
       return;
     }
 
-    const selectedUsers = [
-      ...groupUsers.querySelectorAll(
-        'input[type="checkbox"]:checked'
-      )
-    ];
+    const name =
+      groupName.value.trim();
 
-    if (selectedUsers.length === 0) {
-      alert("Seleccioná al menos una persona.");
+    if (!name) {
+
+      alert(
+        "Escribí un nombre para el grupo."
+      );
+
+      return;
+    }
+
+    const selectedInputs =
+      [
+        ...groupUsers.querySelectorAll(
+          'input[type="checkbox"]:checked'
+        )
+      ];
+
+    if (
+      selectedInputs.length === 0
+    ) {
+
+      alert(
+        "Seleccioná al menos una persona."
+      );
+
       return;
     }
 
     /*
-      Map evita UID repetidos.
+      Map evita usuarios repetidos.
     */
 
-    const membersMap = new Map();
+    const membersMap =
+      new Map();
 
     membersMap.set(
       currentUser.uid,
       true
     );
 
-    selectedUsers.forEach((input) => {
-      membersMap.set(input.value, true);
-    });
+    selectedInputs.forEach(
+      (input) => {
 
-    const members = [...membersMap.keys()];
+        membersMap.set(
+          input.value,
+          true
+        );
+      }
+    );
 
-    confirmGroupButton.disabled = true;
+    const members =
+      [...membersMap.keys()];
+
+    confirmGroupButton.disabled =
+      true;
 
     try {
-      const conversationRef = await addDoc(
-        collection(db, "conversations"),
-        {
-          type: "group",
-          name: name,
-          ownerId: currentUser.uid,
-          members: members,
-          createdAt: serverTimestamp(),
-          lastMessage: "",
-          lastMessageAt: serverTimestamp()
-        }
-      );
+
+      const conversationRef =
+        await addDoc(
+          collection(
+            db,
+            "conversations"
+          ),
+          {
+            type: "group",
+
+            name: name,
+
+            ownerId:
+              currentUser.uid,
+
+            members:
+              members,
+
+            createdAt:
+              serverTimestamp(),
+
+            lastMessage: "",
+
+            lastMessageAt:
+              serverTimestamp()
+          }
+        );
 
       closeGroupModal();
 
-      const newConversation = {
-        id: conversationRef.id,
-        type: "group",
-        name: name,
-        ownerId: currentUser.uid,
-        members: members,
-        lastMessage: "",
-        lastMessageAt: null
-      };
+      openConversation({
+        id:
+          conversationRef.id,
 
-      openConversation(newConversation);
+        type:
+          "group",
+
+        name:
+          name,
+
+        ownerId:
+          currentUser.uid,
+
+        members:
+          members,
+
+        lastMessage:
+          "",
+
+        lastMessageAt:
+          null
+      });
 
     } catch (error) {
-      console.error("Error creando grupo:", error);
+
+      console.error(
+        "ERROR CREANDO GRUPO:",
+        error
+      );
 
       alert(
         "No se pudo crear el grupo: " +
@@ -1405,7 +1944,8 @@ confirmGroupButton?.addEventListener(
       );
     }
 
-    confirmGroupButton.disabled = false;
+    confirmGroupButton.disabled =
+      false;
   }
 );
 
@@ -1414,30 +1954,47 @@ confirmGroupButton?.addEventListener(
    ADMIN
 ========================================================= */
 
-adminButton?.addEventListener("click", () => {
-  if (!isAdminUser()) {
-    alert("No tenés permisos de administrador.");
-    return;
-  }
+adminButton?.addEventListener(
+  "click",
+  () => {
 
-  openAdminPanel();
-});
+    if (!isAdminUser()) {
+
+      alert(
+        "No tenés permisos de administrador."
+      );
+
+      return;
+    }
+
+    openAdminPanel();
+  }
+);
 
 
 function openAdminPanel() {
+
   if (!isAdminUser()) {
     return;
   }
 
-  adminPanel?.classList.remove("hidden");
+  adminPanel?.classList.remove(
+    "hidden"
+  );
 
   renderAdminUsers();
 }
 
 
-adminCloseButton?.addEventListener("click", () => {
-  adminPanel?.classList.add("hidden");
-});
+adminCloseButton?.addEventListener(
+  "click",
+  () => {
+
+    adminPanel?.classList.add(
+      "hidden"
+    );
+  }
+);
 
 
 /* =========================================================
@@ -1445,102 +2002,143 @@ adminCloseButton?.addEventListener("click", () => {
 ========================================================= */
 
 function renderAdminUsers() {
-  if (!adminUsers) return;
-
-  const search =
-    adminSearch?.value.trim().toLowerCase() || "";
-
-  const filteredUsers = allUsers.filter((user) => {
-    if (!search) return true;
-
-    return (
-      (user.username || "")
-        .toLowerCase()
-        .includes(search) ||
-
-      (user.email || "")
-        .toLowerCase()
-        .includes(search) ||
-
-      user.uid
-        .toLowerCase()
-        .includes(search)
-    );
-  });
 
   adminUsers.innerHTML = "";
 
+  const search =
+    adminSearch?.value
+      .trim()
+      .toLowerCase() || "";
+
+  const filtered =
+    allUsers.filter(
+      (user) => {
+
+        if (!search) {
+          return true;
+        }
+
+        return (
+          (user.username || "")
+            .toLowerCase()
+            .includes(search) ||
+
+          (user.email || "")
+            .toLowerCase()
+            .includes(search) ||
+
+          user.uid
+            .toLowerCase()
+            .includes(search)
+        );
+      }
+    );
+
   if (adminUserCount) {
+
     adminUserCount.textContent =
-      `${filteredUsers.length} usuarios`;
+      `${filtered.length} usuarios`;
   }
 
-  if (filteredUsers.length === 0) {
-    adminEmpty?.classList.remove("hidden");
+  if (filtered.length === 0) {
+
+    adminEmpty?.classList.remove(
+      "hidden"
+    );
+
     return;
   }
 
-  adminEmpty?.classList.add("hidden");
+  adminEmpty?.classList.add(
+    "hidden"
+  );
 
-  filteredUsers.forEach((user) => {
-    const element = document.createElement("button");
+  filtered.forEach(
+    (user) => {
 
-    element.className = "admin-user-item";
+      const button =
+        document.createElement(
+          "button"
+        );
 
-    element.innerHTML = `
-      <strong>
-        ${escapeHtml(user.username || "Usuario")}
-      </strong>
+      button.className =
+        "admin-user-item";
 
-      <span>
-        ${escapeHtml(user.email || "")}
-      </span>
-    `;
+      button.innerHTML = `
+        <strong>
+          ${escapeHtml(
+            user.username ||
+            "Usuario"
+          )}
+        </strong>
 
-    element.addEventListener("click", () => {
-      selectAdminUser(user);
-    });
+        <span>
+          ${escapeHtml(
+            user.email || ""
+          )}
+        </span>
+      `;
 
-    adminUsers.appendChild(element);
-  });
+      button.addEventListener(
+        "click",
+        () => {
+          selectAdminUser(
+            user
+          );
+        }
+      );
+
+      adminUsers.appendChild(
+        button
+      );
+    }
+  );
 }
 
 
-adminSearch?.addEventListener("input", () => {
-  renderAdminUsers();
-});
+adminSearch?.addEventListener(
+  "input",
+  () => {
+    renderAdminUsers();
+  }
+);
 
 
 /* =========================================================
-   ADMIN - SELECCIONAR USUARIO
+   ADMIN - USUARIO
 ========================================================= */
 
-async function selectAdminUser(user) {
-  selectedAdminUser = user;
+async function selectAdminUser(
+  user
+) {
 
-  adminDetails?.classList.remove("hidden");
+  selectedAdminUser =
+    user;
 
-  if (adminDetailName) {
-    adminDetailName.textContent =
-      user.username || "Usuario";
-  }
+  adminDetails?.classList.remove(
+    "hidden"
+  );
 
-  if (adminDetailEmail) {
-    adminDetailEmail.textContent =
-      user.email || "";
-  }
+  adminDetailName.textContent =
+    user.username ||
+    "Usuario";
 
-  if (adminDetailUid) {
-    adminDetailUid.textContent =
-      user.uid || "";
-  }
+  adminDetailEmail.textContent =
+    user.email ||
+    "";
 
-  if (adminDetailCreated) {
-    adminDetailCreated.textContent =
-      formatCreatedDate(user.createdAt);
-  }
+  adminDetailUid.textContent =
+    user.uid ||
+    "";
 
-  await loadAdminUserHistory(user);
+  adminDetailCreated.textContent =
+    formatCreatedDate(
+      user.createdAt
+    );
+
+  await loadAdminUserHistory(
+    user
+  );
 }
 
 
@@ -1548,58 +2146,88 @@ async function selectAdminUser(user) {
    ADMIN - HISTORIAL
 ========================================================= */
 
-async function loadAdminUserHistory(user) {
-  if (!adminHistory) return;
+async function loadAdminUserHistory(
+  user
+) {
 
   adminHistory.innerHTML =
     "<p>Cargando historial...</p>";
 
   try {
-    const conversationsQuery = query(
-      collection(db, "conversations"),
-      where("members", "array-contains", user.uid)
-    );
+
+    const conversationsQuery =
+      query(
+        collection(
+          db,
+          "conversations"
+        ),
+        where(
+          "members",
+          "array-contains",
+          user.uid
+        )
+      );
 
     const snapshot =
-      await getDocs(conversationsQuery);
+      await getDocs(
+        conversationsQuery
+      );
 
     const conversations = [];
 
-    snapshot.forEach((docSnapshot) => {
-      conversations.push({
-        id: docSnapshot.id,
-        ...docSnapshot.data()
-      });
-    });
+    snapshot.forEach(
+      (conversationDoc) => {
 
-    conversations.sort((a, b) => {
-      const timeA =
-        a.lastMessageAt?.toMillis?.() || 0;
+        conversations.push({
+          id:
+            conversationDoc.id,
 
-      const timeB =
-        b.lastMessageAt?.toMillis?.() || 0;
+          ...conversationDoc.data()
+        });
+      }
+    );
 
-      return timeB - timeA;
-    });
+    conversations.sort(
+      (a, b) => {
+
+        const timeA =
+          a.lastMessageAt?.toMillis?.() ||
+          0;
+
+        const timeB =
+          b.lastMessageAt?.toMillis?.() ||
+          0;
+
+        return timeB - timeA;
+      }
+    );
 
     adminHistory.innerHTML = "";
 
-    if (conversations.length === 0) {
+    if (
+      conversations.length === 0
+    ) {
+
       adminHistory.innerHTML =
         "<p>Este usuario no tiene conversaciones.</p>";
 
       return;
     }
 
-    for (const conversation of conversations) {
+    for (
+      const conversation
+      of conversations
+    ) {
+
       await renderAdminConversation(
         conversation
       );
     }
 
   } catch (error) {
+
     console.error(
-      "Error cargando historial admin:",
+      "ERROR HISTORIAL ADMIN:",
       error
     );
 
@@ -1609,123 +2237,166 @@ async function loadAdminUserHistory(user) {
 }
 
 
-async function renderAdminConversation(conversation) {
+async function renderAdminConversation(
+  conversation
+) {
+
   const container =
-    document.createElement("section");
+    document.createElement(
+      "section"
+    );
 
   container.className =
     "admin-conversation";
 
-  const title =
-    conversation.type === "group"
-      ? conversation.name || "Grupo"
-      : getAdminPrivateConversationTitle(
-          conversation
-        );
+  let title;
+
+  if (
+    conversation.type ===
+    "group"
+  ) {
+
+    title =
+      conversation.name ||
+      "Grupo";
+
+  } else {
+
+    const otherUid =
+      conversation.members?.find(
+        (uid) =>
+          uid !==
+          selectedAdminUser?.uid
+      );
+
+    title =
+      getUsername(
+        otherUid
+      ) ||
+      "Chat privado";
+  }
 
   container.innerHTML = `
-    <h3>${escapeHtml(title)}</h3>
+    <h3>
+      ${escapeHtml(title)}
+    </h3>
+
     <div class="admin-message-list">
       Cargando mensajes...
     </div>
   `;
 
-  adminHistory.appendChild(container);
+  adminHistory.appendChild(
+    container
+  );
 
   const messageList =
     container.querySelector(
       ".admin-message-list"
     );
 
-  const messagesQuery = query(
-    collection(
-      db,
-      "conversations",
-      conversation.id,
-      "messages"
-    ),
-    orderBy("createdAt", "asc")
-  );
+  const messagesQuery =
+    query(
+      collection(
+        db,
+        "conversations",
+        conversation.id,
+        "messages"
+      ),
+      orderBy(
+        "createdAt",
+        "asc"
+      )
+    );
 
   const snapshot =
-    await getDocs(messagesQuery);
+    await getDocs(
+      messagesQuery
+    );
 
   messageList.innerHTML = "";
 
   if (snapshot.empty) {
+
     messageList.innerHTML =
       "<p>Sin mensajes.</p>";
 
     return;
   }
 
-  snapshot.forEach((docSnapshot) => {
-    const message =
-      docSnapshot.data();
+  snapshot.forEach(
+    (messageDoc) => {
 
-    const sender =
-      getUsername(message.senderId);
+      const message =
+        messageDoc.data();
 
-    const messageElement =
-      document.createElement("div");
+      const sender =
+        message.senderName ||
+        getUsername(
+          message.senderId
+        ) ||
+        "Usuario";
 
-    messageElement.className =
-      "admin-message";
+      const element =
+        document.createElement(
+          "div"
+        );
 
-    messageElement.innerHTML = `
-      <div class="admin-message-info">
-        <strong>${escapeHtml(sender)}</strong>
+      element.className =
+        "admin-message";
 
-        <span>
-          ${formatDate(message.createdAt)}
-        </span>
-      </div>
+      element.innerHTML = `
+        <div class="admin-message-info">
 
-      <div class="admin-message-content">
-        ${makeLinksClickable(message.content || "")}
-      </div>
+          <strong>
+            ${escapeHtml(sender)}
+          </strong>
 
-      <button
-        class="admin-delete-message"
-        data-message-id="${docSnapshot.id}"
-      >
-        Eliminar
-      </button>
-    `;
+          <span>
+            ${formatDate(
+              message.createdAt
+            )}
+          </span>
 
-    messageElement
-      .querySelector(".admin-delete-message")
-      ?.addEventListener(
-        "click",
-        async () => {
-          await adminDeleteMessage(
-            conversation.id,
-            docSnapshot.id
-          );
+        </div>
 
-          await loadAdminUserHistory(
-            selectedAdminUser
-          );
-        }
+        <div class="admin-message-content">
+          ${makeLinksClickable(
+            message.content || ""
+          )}
+        </div>
+
+        <button
+          class="admin-delete-message"
+        >
+          Eliminar
+        </button>
+      `;
+
+      element
+        .querySelector(
+          ".admin-delete-message"
+        )
+        ?.addEventListener(
+          "click",
+          async () => {
+
+            await adminDeleteMessage(
+              conversation.id,
+              messageDoc.id
+            );
+
+            await loadAdminUserHistory(
+              selectedAdminUser
+            );
+          }
+        );
+
+      messageList.appendChild(
+        element
       );
-
-    messageList.appendChild(
-      messageElement
-    );
-  });
-}
-
-
-function getAdminPrivateConversationTitle(
-  conversation
-) {
-  const otherUid =
-    conversation.members?.find(
-      (uid) =>
-        uid !== selectedAdminUser?.uid
-    );
-
-  return getUsername(otherUid) || "Chat privado";
+    }
+  );
 }
 
 
@@ -1737,11 +2408,13 @@ async function adminDeleteMessage(
   conversationId,
   messageId
 ) {
+
   if (!isAdminUser()) {
     return;
   }
 
   try {
+
     const deleteFunction =
       httpsCallable(
         functions,
@@ -1749,13 +2422,17 @@ async function adminDeleteMessage(
       );
 
     await deleteFunction({
-      conversationId,
-      messageId
+      conversationId:
+        conversationId,
+
+      messageId:
+        messageId
     });
 
   } catch (error) {
+
     console.error(
-      "Error eliminando mensaje como admin:",
+      "ERROR ADMIN BORRANDO MENSAJE:",
       error
     );
 
@@ -1768,24 +2445,25 @@ async function adminDeleteMessage(
 
 
 /* =========================================================
-   ADMIN - SINCRONIZAR AUTH CON FIRESTORE
+   ADMIN - SINCRONIZAR USUARIOS
 ========================================================= */
 
 adminSyncButton?.addEventListener(
   "click",
   async () => {
+
     if (!isAdminUser()) {
       return;
     }
 
-    adminSyncButton.disabled = true;
+    adminSyncButton.disabled =
+      true;
 
-    if (adminSyncStatus) {
-      adminSyncStatus.textContent =
-        "Comprobando usuarios de Firebase Authentication...";
-    }
+    adminSyncStatus.textContent =
+      "Comprobando usuarios...";
 
     try {
+
       const syncFunction =
         httpsCallable(
           functions,
@@ -1795,14 +2473,13 @@ adminSyncButton?.addEventListener(
       const result =
         await syncFunction({});
 
-      const data = result.data;
+      const data =
+        result.data;
 
-      if (adminSyncStatus) {
-        adminSyncStatus.textContent =
-          `Authentication: ${data.authUserCount} | ` +
-          `Firestore: ${data.firestoreUserCount} | ` +
-          `Eliminados: ${data.removedCount}`;
-      }
+      adminSyncStatus.textContent =
+        `Authentication: ${data.authUserCount} | ` +
+        `Firestore: ${data.firestoreUserCount} | ` +
+        `Eliminados: ${data.removedCount}`;
 
       await loadUsers();
 
@@ -1812,57 +2489,57 @@ adminSyncButton?.addEventListener(
         selectedAdminUser &&
         data.removedUsers?.some(
           (user) =>
-            user.uid === selectedAdminUser.uid
+            user.uid ===
+            selectedAdminUser.uid
         )
       ) {
-        selectedAdminUser = null;
 
-        adminDetails?.classList.add("hidden");
+        selectedAdminUser =
+          null;
 
-        if (adminHistory) {
-          adminHistory.innerHTML = "";
-        }
+        adminDetails?.classList.add(
+          "hidden"
+        );
+
+        adminHistory.innerHTML =
+          "";
       }
 
     } catch (error) {
+
       console.error(
-        "Error sincronizando usuarios:",
+        "ERROR SINCRONIZANDO:",
         error
       );
 
-      if (adminSyncStatus) {
-        adminSyncStatus.textContent =
-          "Error: " + error.message;
-      }
+      adminSyncStatus.textContent =
+        "Error: " +
+        error.message;
     }
 
-    adminSyncButton.disabled = false;
+    adminSyncButton.disabled =
+      false;
   }
 );
 
 
 /* =========================================================
-   URL / ADMIN DIRECTO
+   LIMPIEZA
 ========================================================= */
 
-window.addEventListener("popstate", () => {
-  if (window.location.pathname === "/admin") {
-    if (isAdminUser()) {
-      openAdminPanel();
+window.addEventListener(
+  "beforeunload",
+  () => {
+
+    if (
+      currentUser &&
+      selectedConversationId
+    ) {
+
+      setTyping(false);
     }
   }
-});
-
-
-/* =========================================================
-   LIMPIEZA AL CERRAR / CAMBIAR DE PÁGINA
-========================================================= */
-
-window.addEventListener("beforeunload", () => {
-  if (currentUser && selectedConversationId) {
-    setTyping(false).catch(() => {});
-  }
-});
+);
 
 
 /* =========================================================
