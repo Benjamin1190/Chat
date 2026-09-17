@@ -685,6 +685,26 @@ button {
     font-size: 10px;
 }
 
+.message-image {
+    display: block;
+    max-width: 260px;
+    max-height: 320px;
+
+    border-radius: 13px;
+
+    cursor: pointer;
+
+    object-fit: cover;
+}
+
+.message-wrapper.own .message-image {
+    margin-bottom: 4px;
+}
+
+.message-text {
+    margin-top: 2px;
+}
+
 /* =====================================================
    ÁREA ESCRIBIR
 ===================================================== */
