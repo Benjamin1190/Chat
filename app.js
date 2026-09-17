@@ -16,6 +16,7 @@ import {
     getDoc,
     getDocs,
     addDoc,
+    deleteDoc,
     query,
     where,
     orderBy,
@@ -24,9 +25,9 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
 
-/* =========================
+/* =========================================================
    FIREBASE
-========================= */
+========================================================= */
 
 const firebaseConfig = {
     apiKey: "AIzaSyAQkoJ1NZ05MSHAkP2JXQlNkhg14uIulps",
@@ -38,18 +39,45 @@ const firebaseConfig = {
     measurementId: "G-TSJWY9EVS7"
 };
 
-const firebaseApp = initializeApp(firebaseConfig);
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
 
-const auth = getAuth(firebaseApp);
-const db = getFirestore(firebaseApp);
+
+/* =========================================================
+   ADMIN
+========================================================= */
+
+const ADMIN_USERNAME = "minibenja2016";
 
 
-/* =========================
-   ELEMENTOS
-========================= */
+/* =========================================================
+   VARIABLES
+========================================================= */
+
+let currentUser = null;
+let currentProfile = null;
+
+let currentConversationId = null;
+let currentOtherUser = null;
+let currentConversationData = null;
+
+let creatingAccount = false;
+
+let unsubscribeMessages = null;
+let unsubscribeConversations = null;
+
+let allUsers = [];
+
+let selectedGroupUsers = new Set();
+
+
+/* =========================================================
+   DOM - AUTENTICACIÓN
+========================================================= */
 
 const authScreen = document.getElementById("authScreen");
-const app = document.getElementById("app");
+const appScreen = document.getElementById("appScreen");
 
 const loginForm = document.getElementById("loginForm");
 const registerForm = document.getElementById("registerForm");
@@ -57,224 +85,161 @@ const registerForm = document.getElementById("registerForm");
 const loginEmail = document.getElementById("loginEmail");
 const loginPassword = document.getElementById("loginPassword");
 
-const registerEmail = document.getElementById("registerEmail");
 const registerUsername = document.getElementById("registerUsername");
+const registerEmail = document.getElementById("registerEmail");
 const registerPassword = document.getElementById("registerPassword");
 
-const loginButton = document.getElementById("loginButton");
-const registerButton = document.getElementById("registerButton");
-
-const showRegisterButton =
-    document.getElementById("showRegister");
-
-const showLoginButton =
-    document.getElementById("showLogin");
-
-const authMessage =
-    document.getElementById("authMessage");
-
-const currentUserElement =
-    document.getElementById("currentUser");
-
-const logoutButton =
-    document.getElementById("logoutButton");
-
-const userSearch =
-    document.getElementById("userSearch");
-
-const searchResults =
-    document.getElementById("searchResults");
-
-const chatList =
-    document.getElementById("chatList");
-
-const welcome =
-    document.getElementById("welcome");
-
-const chatWindow =
-    document.getElementById("chatWindow");
-
-const chatTitle =
-    document.getElementById("chatTitle");
-
-const chatStatus =
-    document.getElementById("chatStatus");
-
-const messages =
-    document.getElementById("messages");
-
-const messageInput =
-    document.getElementById("messageInput");
-
-const sendButton =
-    document.getElementById("sendButton");
+const showRegisterButton = document.getElementById("showRegisterButton");
+const showLoginButton = document.getElementById("showLoginButton");
 
 
-/* =========================
-   VARIABLES
-========================= */
+/* =========================================================
+   DOM - APP
+========================================================= */
 
-let currentUser = null;
-let currentProfile = null;
+const currentUsername = document.getElementById("currentUsername");
+const currentEmail = document.getElementById("currentEmail");
 
-let currentConversationId = null;
-let currentOtherUser = null;
+const logoutButton = document.getElementById("logoutButton");
 
-let unsubscribeMessages = null;
-let unsubscribeChats = null;
+const userSearch = document.getElementById("userSearch");
+const searchResults = document.getElementById("searchResults");
+const chatList = document.getElementById("chatList");
 
-let creatingAccount = false;
+const welcomeScreen = document.getElementById("welcomeScreen");
+const chatWindow = document.getElementById("chatWindow");
+
+const chatTitle = document.getElementById("chatTitle");
+const chatStatus = document.getElementById("chatStatus");
+
+const messages = document.getElementById("messages");
+
+const messageInput = document.getElementById("messageInput");
+const sendButton = document.getElementById("sendButton");
+const characterCounter = document.getElementById("characterCounter");
+
+const deleteChatButton = document.getElementById("deleteChatButton");
 
 
-/* =========================
-   MENSAJE DE AUTENTICACIÓN
-========================= */
+/* =========================================================
+   DOM - GRUPOS
+========================================================= */
 
-function showAuthMessage(message, error = false) {
+const createGroupButton = document.getElementById("createGroupButton");
 
-    authMessage.textContent = message;
+const groupModal = document.getElementById("groupModal");
+const groupName = document.getElementById("groupName");
+const groupUsers = document.getElementById("groupUsers");
 
-    if (error) {
-        authMessage.style.color = "#ff4d4d";
-    } else {
-        authMessage.style.color = "";
-    }
+const cancelGroupButton = document.getElementById("cancelGroupButton");
+const confirmGroupButton = document.getElementById("confirmGroupButton");
+
+
+/* =========================================================
+   DOM - ADMIN
+========================================================= */
+
+const adminButton = document.getElementById("adminButton");
+
+const adminPanel = document.getElementById("adminPanel");
+const adminCloseButton = document.getElementById("adminCloseButton");
+
+const adminSearch = document.getElementById("adminSearch");
+const adminSyncButton = document.getElementById("adminSyncButton");
+const adminSyncStatus = document.getElementById("adminSyncStatus");
+
+const adminUsers = document.getElementById("adminUsers");
+const adminEmpty = document.getElementById("adminEmpty");
+
+const adminDetails = document.getElementById("adminDetails");
+
+const adminDetailName = document.getElementById("adminDetailName");
+const adminDetailEmail = document.getElementById("adminDetailEmail");
+const adminDetailUid = document.getElementById("adminDetailUid");
+const adminDetailCreated = document.getElementById("adminDetailCreated");
+
+const adminHistory = document.getElementById("adminHistory");
+
+
+/* =========================================================
+   INICIO
+========================================================= */
+
+function showLogin() {
+    if (loginForm) loginForm.classList.remove("hidden");
+    if (registerForm) registerForm.classList.add("hidden");
 }
 
-
-/* =========================
-   MOSTRAR APP
-========================= */
+function showRegister() {
+    if (loginForm) loginForm.classList.add("hidden");
+    if (registerForm) registerForm.classList.remove("hidden");
+}
 
 function showApp() {
-
-    authScreen.classList.add("hidden");
-    app.classList.remove("hidden");
+    if (authScreen) authScreen.classList.add("hidden");
+    if (appScreen) appScreen.classList.remove("hidden");
 }
-
-
-/* =========================
-   MOSTRAR LOGIN
-========================= */
 
 function showAuth() {
+    if (authScreen) authScreen.classList.remove("hidden");
+    if (appScreen) appScreen.classList.add("hidden");
+}
 
-    app.classList.add("hidden");
-    authScreen.classList.remove("hidden");
+function updateAdminButton() {
+    if (!adminButton) return;
+
+    if (
+        currentProfile &&
+        currentProfile.usernameLower === ADMIN_USERNAME.toLowerCase()
+    ) {
+        adminButton.classList.remove("hidden");
+    } else {
+        adminButton.classList.add("hidden");
+    }
 }
 
 
-/* =========================
-   CAMBIAR FORMULARIOS
-========================= */
-
-function showLoginForm() {
-
-    loginForm.classList.remove("hidden");
-    registerForm.classList.add("hidden");
-
-    showAuthMessage("");
-}
-
-
-function showRegisterForm() {
-
-    loginForm.classList.add("hidden");
-    registerForm.classList.remove("hidden");
-
-    showAuthMessage("");
-}
-
-
-showRegisterButton.addEventListener(
-    "click",
-    showRegisterForm
-);
-
-
-showLoginButton.addEventListener(
-    "click",
-    showLoginForm
-);
-
-
-/* =========================
+/* =========================================================
    REGISTRO
-========================= */
+========================================================= */
 
 async function register() {
+    const username = registerUsername?.value.trim();
+    const email = registerEmail?.value.trim();
+    const password = registerPassword?.value;
 
-    const email =
-        registerEmail.value.trim();
-
-    const username =
-        registerUsername.value.trim();
-
-    const password =
-        registerPassword.value;
-
-    if (!email) {
-
-        showAuthMessage(
-            "Escribe tu correo electrónico.",
-            true
-        );
-
-        return;
-    }
-
-    if (!username) {
-
-        showAuthMessage(
-            "Escribe un nombre de usuario.",
-            true
-        );
-
+    if (!username || !email || !password) {
+        alert("Completá todos los campos.");
         return;
     }
 
     if (username.length < 3) {
-
-        showAuthMessage(
-            "El usuario debe tener al menos 3 caracteres.",
-            true
-        );
-
-        return;
-    }
-
-    if (!password) {
-
-        showAuthMessage(
-            "Escribe una contraseña.",
-            true
-        );
-
+        alert("El nombre de usuario debe tener al menos 3 caracteres.");
         return;
     }
 
     if (password.length < 6) {
-
-        showAuthMessage(
-            "La contraseña debe tener al menos 6 caracteres.",
-            true
-        );
-
+        alert("La contraseña debe tener al menos 6 caracteres.");
         return;
     }
 
-    registerButton.disabled = true;
     creatingAccount = true;
 
-    showAuthMessage(
-        "Creando cuenta..."
-    );
-
     try {
+        const usernameLower = username.toLowerCase();
 
-        console.log(
-            "PASO 1: Creando cuenta en Authentication..."
+        const usersSnapshot = await getDocs(
+            query(
+                collection(db, "users"),
+                where("usernameLower", "==", usernameLower)
+            )
         );
+
+        if (!usersSnapshot.empty) {
+            alert("Ese nombre de usuario ya está usado.");
+            creatingAccount = false;
+            return;
+        }
 
         const userCredential =
             await createUserWithEmailAndPassword(
@@ -283,750 +248,412 @@ async function register() {
                 password
             );
 
-        const user =
-            userCredential.user;
-
-        console.log(
-            "PASO 2: Authentication OK"
-        );
-
-        console.log(
-            "UID:",
-            user.uid
-        );
-
-        console.log(
-            "PASO 3: Creando perfil en Firestore..."
-        );
-
-        const userRef =
-            doc(
-                db,
-                "users",
-                user.uid
-            );
+        const user = userCredential.user;
 
         await setDoc(
-            userRef,
+            doc(db, "users", user.uid),
             {
-                username:
-                    username,
-
-                usernameLower:
-                    username.toLowerCase(),
-
-                email:
-                    email,
-
-                createdAt:
-                    serverTimestamp()
+                username: username,
+                usernameLower: usernameLower,
+                email: email,
+                createdAt: serverTimestamp()
             }
         );
 
-        console.log(
-            "PASO 4: Firestore OK"
-        );
-
-        currentUser = user;
-
-        currentProfile = {
-            username:
-                username,
-
-            usernameLower:
-                username.toLowerCase(),
-
-            email:
-                email
-        };
-
-        registerEmail.value = "";
-        registerUsername.value = "";
-        registerPassword.value = "";
-
-        showAuthMessage(
-            "¡Cuenta creada correctamente!"
-        );
-
-        await enterApp();
+        alert("Cuenta creada correctamente.");
 
     } catch (error) {
+        console.error(error);
 
-        console.error(
-            "========== ERROR FIREBASE =========="
-        );
-
-        console.error(
-            "Código:",
-            error.code
-        );
-
-        console.error(
-            "Mensaje:",
+        alert(
+            "No se pudo crear la cuenta.\n\n" +
+            error.code +
+            "\n" +
             error.message
         );
 
-        console.error(
-            "Error completo:",
-            error
-        );
-
-        console.error(
-            "===================================="
-        );
-
-        let message =
-            "ERROR REAL: " +
-            error.code +
-            " | " +
-            error.message;
-
-        showAuthMessage(
-            message,
-            true
-        );
-
     } finally {
-
-        registerButton.disabled = false;
         creatingAccount = false;
     }
 }
 
 
-registerButton.addEventListener(
-    "click",
-    register
-);
-
-
-/* =========================
+/* =========================================================
    LOGIN
-========================= */
+========================================================= */
 
 async function login() {
+    const email = loginEmail?.value.trim();
+    const password = loginPassword?.value;
 
-    const email =
-        loginEmail.value.trim();
+    if (!email || !password) {
+        alert("Ingresá tu correo y contraseña.");
+        return;
+    }
 
-    const password =
-        loginPassword.value;
-
-    if (!email) {
-
-        showAuthMessage(
-            "Escribe tu correo electrónico.",
-            true
+    try {
+        await signInWithEmailAndPassword(
+            auth,
+            email,
+            password
         );
+
+    } catch (error) {
+        console.error(error);
+
+        alert(
+            "No se pudo iniciar sesión.\n\n" +
+            error.code +
+            "\n" +
+            error.message
+        );
+    }
+}
+
+
+/* =========================================================
+   AUTH
+========================================================= */
+
+onAuthStateChanged(auth, async (user) => {
+
+    if (!user) {
+
+        if (creatingAccount) {
+            return;
+        }
+
+        currentUser = null;
+        currentProfile = null;
+
+        showAuth();
 
         return;
     }
 
-    if (!password) {
-
-        showAuthMessage(
-            "Escribe tu contraseña.",
-            true
-        );
-
-        return;
-    }
-
-    loginButton.disabled = true;
-
-    showAuthMessage(
-        "Iniciando sesión..."
-    );
+    currentUser = user;
 
     try {
 
-        console.log(
-            "LOGIN PASO 1: Authentication..."
-        );
-
-        const userCredential =
-            await signInWithEmailAndPassword(
-                auth,
-                email,
-                password
-            );
-
-        const user =
-            userCredential.user;
-
-        console.log(
-            "LOGIN PASO 2: Authentication OK"
-        );
-
-        console.log(
-            "UID:",
+        const profileRef = doc(
+            db,
+            "users",
             user.uid
         );
 
-        console.log(
-            "LOGIN PASO 3: Buscando perfil..."
-        );
+        const profileSnap = await getDoc(profileRef);
 
-        const userSnapshot =
-            await getDoc(
-                doc(
-                    db,
-                    "users",
-                    user.uid
-                )
-            );
+        if (!profileSnap.exists()) {
 
-        console.log(
-            "LOGIN PASO 4: Perfil existe:",
-            userSnapshot.exists()
-        );
+            console.error("El usuario no tiene perfil.");
 
-        if (!userSnapshot.exists()) {
-
-            showAuthMessage(
-                "La cuenta existe, pero no tiene perfil en Firestore.",
-                true
+            alert(
+                "Firebase inició sesión, pero no existe el perfil del usuario."
             );
 
             return;
         }
 
-        currentUser = user;
+        currentProfile = profileSnap.data();
 
-        currentProfile =
-            userSnapshot.data();
+        if (currentUsername) {
+            currentUsername.textContent =
+                "@" + currentProfile.username;
+        }
 
-        console.log(
-            "LOGIN PASO 5: Perfil:",
-            currentProfile
-        );
+        if (currentEmail) {
+            currentEmail.textContent =
+                currentProfile.email || user.email || "";
+        }
 
-        currentUserElement.textContent =
-            "@" +
-            currentProfile.username;
+        updateAdminButton();
 
         showApp();
 
-        console.log(
-            "LOGIN PASO 6: App abierta"
-        );
+        await loadAllUsers();
 
-        await loadConversations();
+        loadConversations();
+
+        showWelcome();
 
     } catch (error) {
 
-        console.error(
-            "========== ERROR LOGIN =========="
-        );
+        console.error(error);
 
-        console.error(
-            "Código:",
-            error.code
-        );
-
-        console.error(
-            "Mensaje:",
+        alert(
+            "Firebase rechazó el acceso a Firestore.\n\n" +
+            error.code +
+            "\n" +
             error.message
         );
-
-        console.error(
-            "Error completo:",
-            error
-        );
-
-        console.error(
-            "================================="
-        );
-
-        let message =
-            "ERROR LOGIN: " +
-            error.code +
-            " | " +
-            error.message;
-
-        showAuthMessage(
-            message,
-            true
-        );
-
-    } finally {
-
-        loginButton.disabled = false;
     }
-}
+});
 
 
-loginButton.addEventListener(
-    "click",
-    login
-);
+/* =========================================================
+   LOGOUT
+========================================================= */
 
-
-/* =========================
-   ENTER LOGIN
-========================= */
-
-loginPassword.addEventListener(
-    "keydown",
-    event => {
-
-        if (event.key === "Enter") {
-
-            event.preventDefault();
-
-            login();
-        }
-    }
-);
-
-
-/* =========================
-   ENTER REGISTRO
-========================= */
-
-registerPassword.addEventListener(
-    "keydown",
-    event => {
-
-        if (event.key === "Enter") {
-
-            event.preventDefault();
-
-            register();
-        }
-    }
-);
-
-
-/* =========================
-   CARGAR PERFIL
-========================= */
-
-async function loadUserProfile(user) {
-
-    const userSnapshot =
-        await getDoc(
-            doc(
-                db,
-                "users",
-                user.uid
-            )
-        );
-
-    if (!userSnapshot.exists()) {
-        return null;
-    }
-
-    return userSnapshot.data();
-}
-
-
-/* =========================
-   ENTRAR A LA APP
-========================= */
-
-async function enterApp() {
-
-    if (!currentUser) {
-        return;
-    }
+async function logout() {
 
     try {
 
-        if (!currentProfile) {
-
-            currentProfile =
-                await loadUserProfile(
-                    currentUser
-                );
+        if (unsubscribeMessages) {
+            unsubscribeMessages();
+            unsubscribeMessages = null;
         }
 
-        if (!currentProfile) {
-
-            showAuthMessage(
-                "No se encontró tu perfil.",
-                true
-            );
-
-            return;
+        if (unsubscribeConversations) {
+            unsubscribeConversations();
+            unsubscribeConversations = null;
         }
 
-        currentUserElement.textContent =
-            "@" +
-            currentProfile.username;
+        currentConversationId = null;
+        currentOtherUser = null;
+        currentConversationData = null;
 
-        showApp();
-
-        await loadConversations();
+        await signOut(auth);
 
     } catch (error) {
 
-        console.error(
-            "Error entrando a la app:",
-            error
-        );
+        console.error(error);
 
-        showAuthMessage(
-            "Error: " +
-            error.code +
-            " | " +
-            error.message,
-            true
+        alert(
+            "No se pudo cerrar sesión.\n\n" +
+            error.message
         );
     }
 }
 
 
-/* =========================
-   ESTADO AUTH
-========================= */
+/* =========================================================
+   PERSONAS
+========================================================= */
 
-onAuthStateChanged(
-    auth,
-    async user => {
+async function loadAllUsers() {
 
-        console.log(
-            "AUTH STATE:",
-            user
-        );
+    if (!currentUser) return;
 
-        if (!user) {
+    try {
 
-            currentUser = null;
-            currentProfile = null;
+        const snapshot =
+            await getDocs(collection(db, "users"));
 
-            showAuth();
+        allUsers = [];
 
-            return;
-        }
+        snapshot.forEach((item) => {
 
-        currentUser = user;
+            const data = item.data();
 
-        if (creatingAccount) {
-
-            console.log(
-                "Cuenta en proceso de creación..."
-            );
-
-            return;
-        }
-
-        try {
-
-            currentProfile =
-                await loadUserProfile(
-                    user
-                );
-
-            if (!currentProfile) {
-
-                console.error(
-                    "No existe el perfil."
-                );
-
+            if (item.id === currentUser.uid) {
                 return;
             }
 
-            await enterApp();
+            allUsers.push({
+                uid: item.id,
+                ...data
+            });
+        });
 
-        } catch (error) {
+        allUsers.sort((a, b) => {
 
-            console.error(
-                "Error AUTH:",
-                error
-            );
-        }
-    }
-);
+            const nameA =
+                (a.username || "").toLowerCase();
 
+            const nameB =
+                (b.username || "").toLowerCase();
 
-/* =========================
-   LOGOUT
-========================= */
+            return nameA.localeCompare(nameB);
+        });
 
-logoutButton.addEventListener(
-    "click",
-    async () => {
-
-        try {
-
-            if (unsubscribeChats) {
-
-                unsubscribeChats();
-                unsubscribeChats = null;
-            }
-
-            if (unsubscribeMessages) {
-
-                unsubscribeMessages();
-                unsubscribeMessages = null;
-            }
-
-            currentConversationId = null;
-            currentOtherUser = null;
-            currentProfile = null;
-
-            await signOut(auth);
-
-            chatWindow.classList.add(
-                "hidden"
-            );
-
-            welcome.classList.remove(
-                "hidden"
-            );
-
-            messages.innerHTML = "";
-            chatList.innerHTML = "";
-            searchResults.innerHTML = "";
-
-        } catch (error) {
-
-            console.error(
-                "Error cerrando sesión:",
-                error
-            );
-        }
-    }
-);
-
-
-/* =========================
-   BUSCAR USUARIOS
-========================= */
-
-let searchTimeout = null;
-
-userSearch.addEventListener(
-    "input",
-    () => {
-
-        clearTimeout(searchTimeout);
-
-        searchTimeout =
-            setTimeout(
-                searchUsers,
-                300
-            );
-    }
-);
-
-
-async function searchUsers() {
-
-    const text =
-        userSearch.value
-            .trim()
-            .toLowerCase();
-
-    searchResults.innerHTML = "";
-
-    if (!text) {
-        return;
-    }
-
-    if (!currentUser) {
-        return;
-    }
-
-    try {
-
-        const usersSnapshot =
-            await getDocs(
-                collection(
-                    db,
-                    "users"
-                )
-            );
-
-        const foundUsers = [];
-
-        usersSnapshot.forEach(
-            userDocument => {
-
-                const data =
-                    userDocument.data();
-
-                if (
-                    userDocument.id ===
-                    currentUser.uid
-                ) {
-                    return;
-                }
-
-                const username =
-                    data.username || "";
-
-                const usernameLower =
-                    data.usernameLower ||
-                    username.toLowerCase();
-
-                if (
-                    usernameLower.includes(
-                        text
-                    )
-                ) {
-
-                    foundUsers.push({
-                        id:
-                            userDocument.id,
-
-                        username:
-                            username,
-
-                        email:
-                            data.email || ""
-                    });
-                }
-            }
-        );
-
-        if (foundUsers.length === 0) {
-
-            searchResults.innerHTML =
-                '<div class="no-results">No se encontraron usuarios.</div>';
-
-            return;
-        }
-
-        foundUsers.forEach(
-            user => {
-
-                const element =
-                    document.createElement(
-                        "div"
-                    );
-
-                element.className =
-                    "search-result";
-
-                element.innerHTML = `
-                    <div class="search-result-name">
-                        ${escapeHtml(user.username)}
-                    </div>
-
-                    <div class="search-result-email">
-                        ${escapeHtml(user.email)}
-                    </div>
-                `;
-
-                element.addEventListener(
-                    "click",
-                    () => {
-
-                        openConversationWithUser(
-                            user.id,
-                            user.username
-                        );
-
-                        userSearch.value = "";
-
-                        searchResults.innerHTML = "";
-                    }
-                );
-
-                searchResults.appendChild(
-                    element
-                );
-            }
-        );
+        renderPeople("");
 
     } catch (error) {
 
-        console.error(
-            "Error buscando usuarios:",
-            error
-        );
+        console.error("Error cargando usuarios:", error);
 
-        searchResults.innerHTML =
-            `
-            <div class="no-results">
-                Error: ${escapeHtml(error.message)}
-            </div>
-            `;
+        if (searchResults) {
+            searchResults.innerHTML =
+                "<div class='empty-state'>No se pudieron cargar las personas.</div>";
+        }
     }
 }
 
 
-/* =========================
-   ABRIR CONVERSACIÓN
-========================= */
+/* =========================================================
+   MOSTRAR PERSONAS
+========================================================= */
 
-async function openConversationWithUser(
-    otherUserId,
-    otherUsername
-) {
+function renderPeople(searchText) {
 
-    if (!currentUser) {
+    if (!searchResults) return;
+
+    const text =
+        (searchText || "").trim().toLowerCase();
+
+    const filtered =
+        allUsers.filter((user) => {
+
+            const username =
+                (user.username || "").toLowerCase();
+
+            const email =
+                (user.email || "").toLowerCase();
+
+            return (
+                username.includes(text) ||
+                email.includes(text)
+            );
+        });
+
+    searchResults.innerHTML = "";
+
+    if (filtered.length === 0) {
+
+        searchResults.innerHTML =
+            "<div class='empty-state'>No hay personas que coincidan.</div>";
+
+        searchResults.classList.remove("hidden");
+
         return;
     }
+
+    filtered.forEach((user) => {
+
+        const element =
+            createUserSearchElement(user);
+
+        searchResults.appendChild(element);
+    });
+
+    searchResults.classList.remove("hidden");
+}
+
+
+/* =========================================================
+   ELEMENTO PERSONA
+========================================================= */
+
+function createUserSearchElement(user) {
+
+    const button =
+        document.createElement("button");
+
+    button.type = "button";
+
+    button.className = "search-user";
+
+    const avatar =
+        document.createElement("div");
+
+    avatar.className = "user-avatar";
+
+    avatar.textContent =
+        (user.username || "?")
+            .charAt(0)
+            .toUpperCase();
+
+    const information =
+        document.createElement("div");
+
+    information.className =
+        "user-search-information";
+
+    const name =
+        document.createElement("strong");
+
+    name.textContent =
+        "@" + (user.username || "usuario");
+
+    const email =
+        document.createElement("span");
+
+    email.textContent =
+        user.email || "";
+
+    information.appendChild(name);
+    information.appendChild(email);
+
+    button.appendChild(avatar);
+    button.appendChild(information);
+
+    button.addEventListener("click", () => {
+
+        openConversationWithUser(user);
+
+        if (searchResults) {
+            searchResults.classList.add("hidden");
+        }
+
+        if (userSearch) {
+            userSearch.value = "";
+        }
+    });
+
+    return button;
+}
+
+
+/* =========================================================
+   BUSCAR PERSONAS
+========================================================= */
+
+function searchUsers() {
+
+    const text =
+        userSearch?.value || "";
+
+    renderPeople(text);
+}
+
+
+/* =========================================================
+   CONVERSACIÓN INDIVIDUAL
+========================================================= */
+
+async function openConversationWithUser(user) {
+
+    if (!currentUser || !user) return;
 
     try {
 
         const conversationId =
-            await findOrCreateConversation(
-                otherUserId
-            );
+            await findOrCreateConversation(user.uid);
 
-        currentConversationId =
-            conversationId;
-
-        currentOtherUser = {
-            id:
-                otherUserId,
-
-            username:
-                otherUsername
-        };
-
-        chatTitle.textContent =
-            otherUsername;
-
-        chatStatus.textContent =
-            "Chat";
-
-        welcome.classList.add(
-            "hidden"
+        openConversation(
+            conversationId,
+            {
+                members: [
+                    currentUser.uid,
+                    user.uid
+                ],
+                isGroup: false
+            },
+            user
         );
-
-        chatWindow.classList.remove(
-            "hidden"
-        );
-
-        await loadMessages(
-            conversationId
-        );
-
-        messageInput.focus();
 
     } catch (error) {
 
-        console.error(
-            "Error abriendo conversación:",
-            error
-        );
+        console.error(error);
 
         alert(
-            "Error:\n" +
+            "No se pudo abrir el chat.\n\n" +
+            error.code +
+            "\n" +
             error.message
         );
     }
 }
 
 
-/* =========================
-   BUSCAR / CREAR CONVERSACIÓN
-========================= */
+/* =========================================================
+   BUSCAR / CREAR CHAT
+========================================================= */
 
-async function findOrCreateConversation(
-    otherUserId
-) {
+async function findOrCreateConversation(otherUid) {
 
     const conversationsRef =
-        collection(
-            db,
-            "conversations"
-        );
+        collection(db, "conversations");
 
     const q =
         query(
@@ -1041,25 +668,22 @@ async function findOrCreateConversation(
     const snapshot =
         await getDocs(q);
 
-    for (
-        const conversationDocument
-        of snapshot.docs
-    ) {
+    for (const item of snapshot.docs) {
 
-        const data =
-            conversationDocument.data();
-
-        const members =
-            data.members || [];
+        const data = item.data();
 
         if (
-            members.length === 2 &&
-            members.includes(
-                otherUserId
-            )
+            data.isGroup === true
         ) {
+            continue;
+        }
 
-            return conversationDocument.id;
+        if (
+            Array.isArray(data.members) &&
+            data.members.length === 2 &&
+            data.members.includes(otherUid)
+        ) {
+            return item.id;
         }
     }
 
@@ -1069,17 +693,12 @@ async function findOrCreateConversation(
             {
                 members: [
                     currentUser.uid,
-                    otherUserId
+                    otherUid
                 ],
-
-                createdAt:
-                    serverTimestamp(),
-
-                lastMessage:
-                    "",
-
-                lastMessageAt:
-                    serverTimestamp()
+                isGroup: false,
+                createdAt: serverTimestamp(),
+                lastMessage: "",
+                lastMessageAt: serverTimestamp()
             }
         );
 
@@ -1087,20 +706,88 @@ async function findOrCreateConversation(
 }
 
 
-/* =========================
-   CARGAR MENSAJES
-========================= */
+/* =========================================================
+   ABRIR CONVERSACIÓN
+========================================================= */
 
-async function loadMessages(
-    conversationId
+function openConversation(
+    conversationId,
+    conversationData,
+    otherUser = null
 ) {
 
+    currentConversationId =
+        conversationId;
+
+    currentConversationData =
+        conversationData;
+
+    currentOtherUser =
+        otherUser;
+
+    if (welcomeScreen) {
+        welcomeScreen.classList.add("hidden");
+    }
+
+    if (chatWindow) {
+        chatWindow.classList.remove("hidden");
+    }
+
+    const isGroup =
+        conversationData?.isGroup === true;
+
+    if (isGroup) {
+
+        if (chatTitle) {
+            chatTitle.textContent =
+                conversationData.groupName ||
+                "Grupo";
+        }
+
+        if (chatStatus) {
+
+            const count =
+                Array.isArray(conversationData.members)
+                    ? conversationData.members.length
+                    : 0;
+
+            chatStatus.textContent =
+                `Grupo · ${count} personas`;
+        }
+
+    } else {
+
+        if (chatTitle) {
+            chatTitle.textContent =
+                "@" +
+                (
+                    otherUser?.username ||
+                    "usuario"
+                );
+        }
+
+        if (chatStatus) {
+            chatStatus.textContent =
+                otherUser?.email || "Chat";
+        }
+    }
+
+    loadMessages(conversationId);
+}
+
+
+/* =========================================================
+   CARGAR MENSAJES
+========================================================= */
+
+function loadMessages(conversationId) {
+
     if (unsubscribeMessages) {
-
         unsubscribeMessages();
-
         unsubscribeMessages = null;
     }
+
+    if (!messages) return;
 
     messages.innerHTML = "";
 
@@ -1115,33 +802,44 @@ async function loadMessages(
     const q =
         query(
             messagesRef,
-            orderBy(
-                "createdAt",
-                "asc"
-            )
+            orderBy("createdAt", "asc")
         );
 
     unsubscribeMessages =
         onSnapshot(
             q,
-            snapshot => {
+            (snapshot) => {
 
                 messages.innerHTML = "";
 
-                snapshot.forEach(
-                    messageDocument => {
+                if (snapshot.empty) {
 
-                        displayMessage(
-                            messageDocument.data()
-                        );
-                    }
-                );
+                    const empty =
+                        document.createElement("div");
+
+                    empty.className =
+                        "empty-messages";
+
+                    empty.textContent =
+                        "Todavía no hay mensajes.";
+
+                    messages.appendChild(empty);
+
+                    return;
+                }
+
+                snapshot.forEach((item) => {
+
+                    displayMessage(
+                        item.data()
+                    );
+                });
 
                 messages.scrollTop =
                     messages.scrollHeight;
             },
 
-            error => {
+            (error) => {
 
                 console.error(
                     "Error cargando mensajes:",
@@ -1149,92 +847,90 @@ async function loadMessages(
                 );
 
                 messages.innerHTML =
-                    `
-                    <div class="message-error">
-                        Error: ${escapeHtml(error.message)}
-                    </div>
-                    `;
+                    "<div class='empty-state'>No se pudieron cargar los mensajes.</div>";
             }
         );
 }
 
 
-/* =========================
+/* =========================================================
    MOSTRAR MENSAJE
-========================= */
+========================================================= */
 
 function displayMessage(data) {
 
-    const element =
-        document.createElement(
-            "div"
-        );
+    if (!messages) return;
 
-    const isMine =
-        data.senderId ===
-        currentUser.uid;
+    const wrapper =
+        document.createElement("div");
 
-    element.className =
-        isMine
-            ? "message mine"
-            : "message other";
+    wrapper.className =
+        "message-wrapper";
 
-    const content =
-        document.createElement(
-            "div"
-        );
+    if (
+        data.senderId === currentUser.uid
+    ) {
+        wrapper.classList.add("own");
+    } else {
+        wrapper.classList.add("other");
+    }
 
-    content.className =
-        "message-content";
+    const bubble =
+        document.createElement("div");
 
-    content.textContent =
+    bubble.className =
+        "message-bubble";
+
+    bubble.textContent =
         data.content || "";
 
-    element.appendChild(
-        content
-    );
+    const time =
+        document.createElement("div");
+
+    time.className =
+        "message-time";
 
     if (data.createdAt) {
 
-        const date =
-            data.createdAt.toDate();
+        try {
 
-        const time =
-            date.toLocaleTimeString(
-                "es-UY",
-                {
-                    hour: "2-digit",
-                    minute: "2-digit"
-                }
-            );
+            const date =
+                data.createdAt.toDate();
 
-        const timeElement =
-            document.createElement(
-                "div"
-            );
+            time.textContent =
+                date.toLocaleTimeString(
+                    "es-UY",
+                    {
+                        hour: "2-digit",
+                        minute: "2-digit"
+                    }
+                );
 
-        timeElement.className =
-            "message-time";
-
-        timeElement.textContent =
-            time;
-
-        element.appendChild(
-            timeElement
-        );
+        } catch {
+            time.textContent = "";
+        }
     }
 
-    messages.appendChild(
-        element
-    );
+    wrapper.appendChild(bubble);
+    wrapper.appendChild(time);
+
+    messages.appendChild(wrapper);
 }
 
 
-/* =========================
+/* =========================================================
    ENVIAR MENSAJE
-========================= */
+========================================================= */
 
 async function sendMessage() {
+
+    if (
+        !currentUser ||
+        !currentConversationId ||
+        !messageInput
+    ) {
+        return;
+    }
 
     const content =
         messageInput.value.trim();
@@ -1243,15 +939,18 @@ async function sendMessage() {
         return;
     }
 
-    if (!currentUser) {
+    if (content.length > 4000) {
+
+        alert(
+            "El mensaje no puede superar los 4000 caracteres."
+        );
+
         return;
     }
 
-    if (!currentConversationId) {
-        return;
+    if (sendButton) {
+        sendButton.disabled = true;
     }
-
-    sendButton.disabled = true;
 
     try {
 
@@ -1266,14 +965,9 @@ async function sendMessage() {
         await addDoc(
             messagesRef,
             {
-                senderId:
-                    currentUser.uid,
-
-                content:
-                    content,
-
-                createdAt:
-                    serverTimestamp()
+                senderId: currentUser.uid,
+                content: content,
+                createdAt: serverTimestamp()
             }
         );
 
@@ -1284,11 +978,8 @@ async function sendMessage() {
                 currentConversationId
             ),
             {
-                lastMessage:
-                    content,
-
-                lastMessageAt:
-                    serverTimestamp()
+                lastMessage: content,
+                lastMessageAt: serverTimestamp()
             },
             {
                 merge: true
@@ -1297,72 +988,47 @@ async function sendMessage() {
 
         messageInput.value = "";
 
+        updateCharacterCounter();
+
+        messageInput.focus();
+
     } catch (error) {
 
-        console.error(
-            "Error enviando mensaje:",
-            error
-        );
+        console.error(error);
 
         alert(
-            "Error enviando mensaje:\n" +
+            "No se pudo enviar el mensaje.\n\n" +
+            error.code +
+            "\n" +
             error.message
         );
 
     } finally {
 
-        sendButton.disabled = false;
-
-        messageInput.focus();
+        if (sendButton) {
+            sendButton.disabled = false;
+        }
     }
 }
 
 
-sendButton.addEventListener(
-    "click",
-    sendMessage
-);
+/* =========================================================
+   CARGAR CONVERSACIONES
+========================================================= */
 
+function loadConversations() {
 
-messageInput.addEventListener(
-    "keydown",
-    event => {
-
-        if (
-            event.key === "Enter" &&
-            !event.shiftKey
-        ) {
-
-            event.preventDefault();
-
-            sendMessage();
-        }
-    }
-);
-
-
-/* =========================
-   CARGAR CHATS
-========================= */
-
-async function loadConversations() {
-
-    if (!currentUser) {
+    if (!currentUser || !chatList) {
         return;
     }
 
-    if (unsubscribeChats) {
-
-        unsubscribeChats();
-
-        unsubscribeChats = null;
+    if (unsubscribeConversations) {
+        unsubscribeConversations();
+        unsubscribeConversations = null;
     }
 
     const conversationsRef =
-        collection(
-            db,
-            "conversations"
-        );
+        collection(db, "conversations");
 
     const q =
         query(
@@ -1374,257 +1040,1213 @@ async function loadConversations() {
             )
         );
 
-    unsubscribeChats =
+    unsubscribeConversations =
         onSnapshot(
             q,
-            async snapshot => {
+            async (snapshot) => {
 
                 chatList.innerHTML = "";
 
+                if (snapshot.empty) {
+
+                    const empty =
+                        document.createElement("div");
+
+                    empty.className =
+                        "empty-state";
+
+                    empty.textContent =
+                        "Todavía no tenés conversaciones.";
+
+                    chatList.appendChild(empty);
+
+                    return;
+                }
+
                 const conversations = [];
 
-                for (
-                    const conversationDocument
-                    of snapshot.docs
-                ) {
+                for (const item of snapshot.docs) {
 
-                    const data =
-                        conversationDocument.data();
+                    const data = item.data();
 
-                    const members =
-                        data.members || [];
+                    let title = "Chat";
+                    let subtitle = "";
 
-                    const otherUserId =
-                        members.find(
-                            id =>
-                                id !==
-                                currentUser.uid
-                        );
+                    let otherUser = null;
 
-                    if (!otherUserId) {
-                        continue;
-                    }
+                    if (data.isGroup === true) {
 
-                    try {
+                        title =
+                            data.groupName ||
+                            "Grupo";
 
-                        const otherUserSnapshot =
-                            await getDoc(
-                                doc(
-                                    db,
-                                    "users",
-                                    otherUserId
-                                )
-                            );
+                        subtitle =
+                            data.lastMessage ||
+                            "Grupo nuevo";
 
-                        if (
-                            !otherUserSnapshot.exists()
-                        ) {
+                    } else {
+
+                        const otherUid =
+                            (data.members || [])
+                                .find(
+                                    uid =>
+                                        uid !== currentUser.uid
+                                );
+
+                        if (!otherUid) {
                             continue;
                         }
 
-                        const otherUser =
-                            otherUserSnapshot.data();
+                        const user =
+                            allUsers.find(
+                                u =>
+                                    u.uid === otherUid
+                            );
 
-                        conversations.push({
-                            id:
-                                conversationDocument.id,
+                        if (user) {
 
-                            username:
-                                otherUser.username ||
-                                "Usuario",
+                            otherUser = user;
 
-                            lastMessage:
-                                data.lastMessage ||
-                                "",
+                            title =
+                                "@" +
+                                (
+                                    user.username ||
+                                    "usuario"
+                                );
 
-                            lastMessageAt:
-                                data.lastMessageAt
-                        });
+                        } else {
 
-                    } catch (error) {
+                            try {
 
-                        console.error(
-                            "Error cargando usuario:",
-                            error
-                        );
+                                const userSnap =
+                                    await getDoc(
+                                        doc(
+                                            db,
+                                            "users",
+                                            otherUid
+                                        )
+                                    );
+
+                                if (
+                                    userSnap.exists()
+                                ) {
+
+                                    otherUser = {
+                                        uid: otherUid,
+                                        ...userSnap.data()
+                                    };
+
+                                    title =
+                                        "@" +
+                                        (
+                                            otherUser.username ||
+                                            "usuario"
+                                        );
+                                }
+
+                            } catch (error) {
+
+                                console.error(error);
+                            }
+                        }
+
+                        subtitle =
+                            data.lastMessage ||
+                            "Sin mensajes";
                     }
+
+                    conversations.push({
+                        id: item.id,
+                        data: data,
+                        title: title,
+                        subtitle: subtitle,
+                        otherUser: otherUser
+                    });
                 }
 
                 conversations.sort(
                     (a, b) => {
 
-                        if (
-                            !a.lastMessageAt &&
-                            !b.lastMessageAt
-                        ) {
-                            return 0;
-                        }
+                        const aTime =
+                            a.data.lastMessageAt
+                                ?.toMillis?.() || 0;
 
-                        if (!a.lastMessageAt) {
-                            return 1;
-                        }
+                        const bTime =
+                            b.data.lastMessageAt
+                                ?.toMillis?.() || 0;
 
-                        if (!b.lastMessageAt) {
-                            return -1;
-                        }
-
-                        return (
-                            b.lastMessageAt.toMillis() -
-                            a.lastMessageAt.toMillis()
-                        );
+                        return bTime - aTime;
                     }
                 );
 
                 conversations.forEach(
                     conversation => {
 
-                        createChatElement(
-                            conversation
+                        const element =
+                            createChatElement(
+                                conversation
+                            );
+
+                        chatList.appendChild(
+                            element
                         );
                     }
                 );
             },
 
-            error => {
+            (error) => {
 
                 console.error(
-                    "Error cargando chats:",
+                    "Error cargando conversaciones:",
                     error
                 );
 
                 chatList.innerHTML =
-                    `
-                    <div class="no-results">
-                        Error: ${escapeHtml(error.message)}
-                    </div>
-                    `;
+                    "<div class='empty-state'>No se pudieron cargar los chats.</div>";
             }
         );
 }
 
 
-/* =========================
+/* =========================================================
    ELEMENTO CHAT
-========================= */
+========================================================= */
 
-function createChatElement(
-    conversation
-) {
+function createChatElement(conversation) {
 
-    const element =
-        document.createElement(
-            "div"
-        );
+    const button =
+        document.createElement("button");
 
-    element.className =
-        "chat-item";
+    button.type = "button";
 
-    element.innerHTML = `
-        <div class="chat-item-name">
-            ${escapeHtml(conversation.username)}
-        </div>
+    button.className =
+        "chat-list-item";
 
-        <div class="chat-item-message">
-            ${escapeHtml(conversation.lastMessage)}
-        </div>
-    `;
+    const avatar =
+        document.createElement("div");
 
-    element.addEventListener(
+    avatar.className =
+        "chat-avatar";
+
+    if (
+        conversation.data.isGroup === true
+    ) {
+
+        avatar.textContent = "👥";
+
+    } else {
+
+        avatar.textContent =
+            (
+                conversation.otherUser?.username ||
+                "?"
+            )
+                .charAt(0)
+                .toUpperCase();
+    }
+
+    const information =
+        document.createElement("div");
+
+    information.className =
+        "chat-list-information";
+
+    const title =
+        document.createElement("strong");
+
+    title.textContent =
+        conversation.title;
+
+    const lastMessage =
+        document.createElement("span");
+
+    lastMessage.textContent =
+        conversation.subtitle;
+
+    information.appendChild(title);
+    information.appendChild(lastMessage);
+
+    button.appendChild(avatar);
+    button.appendChild(information);
+
+    button.addEventListener(
         "click",
-        async () => {
+        () => {
 
-            try {
-
-                const conversationSnapshot =
-                    await getDoc(
-                        doc(
-                            db,
-                            "conversations",
-                            conversation.id
-                        )
-                    );
-
-                if (
-                    !conversationSnapshot.exists()
-                ) {
-                    return;
-                }
-
-                const data =
-                    conversationSnapshot.data();
-
-                const otherUserId =
-                    data.members.find(
-                        id =>
-                            id !==
-                            currentUser.uid
-                    );
-
-                currentConversationId =
-                    conversation.id;
-
-                currentOtherUser = {
-                    id:
-                        otherUserId,
-
-                    username:
-                        conversation.username
-                };
-
-                chatTitle.textContent =
-                    conversation.username;
-
-                chatStatus.textContent =
-                    "Chat";
-
-                welcome.classList.add(
-                    "hidden"
-                );
-
-                chatWindow.classList.remove(
-                    "hidden"
-                );
-
-                await loadMessages(
-                    conversation.id
-                );
-
-                messageInput.focus();
-
-            } catch (error) {
-
-                console.error(
-                    "Error abriendo chat:",
-                    error
-                );
-
-                alert(
-                    "Error:\n" +
-                    error.message
-                );
-            }
+            openConversation(
+                conversation.id,
+                conversation.data,
+                conversation.otherUser
+            );
         }
     );
 
-    chatList.appendChild(
-        element
+    return button;
+}
+
+
+/* =========================================================
+   BIENVENIDA
+========================================================= */
+
+function showWelcome() {
+
+    if (welcomeScreen) {
+        welcomeScreen.classList.remove("hidden");
+    }
+
+    if (chatWindow) {
+        chatWindow.classList.add("hidden");
+    }
+}
+
+
+/* =========================================================
+   BORRAR CHAT
+========================================================= */
+
+async function deleteCurrentChat() {
+
+    if (!currentConversationId) {
+        return;
+    }
+
+    const confirmed =
+        confirm(
+            "¿Querés borrar esta conversación de tu lista?"
+        );
+
+    if (!confirmed) {
+        return;
+    }
+
+    try {
+
+        await deleteDoc(
+            doc(
+                db,
+                "conversations",
+                currentConversationId
+            )
+        );
+
+        currentConversationId = null;
+        currentOtherUser = null;
+        currentConversationData = null;
+
+        if (unsubscribeMessages) {
+            unsubscribeMessages();
+            unsubscribeMessages = null;
+        }
+
+        showWelcome();
+
+    } catch (error) {
+
+        console.error(error);
+
+        alert(
+            "No se pudo borrar la conversación.\n\n" +
+            error.code +
+            "\n" +
+            error.message
+        );
+    }
+}
+
+
+/* =========================================================
+   GRUPOS - ABRIR MODAL
+========================================================= */
+
+async function openGroupModal() {
+
+    if (!groupModal) return;
+
+    selectedGroupUsers =
+        new Set();
+
+    if (groupName) {
+        groupName.value = "";
+    }
+
+    await loadGroupUsers();
+
+    groupModal.classList.remove("hidden");
+}
+
+
+/* =========================================================
+   GRUPOS - USUARIOS
+========================================================= */
+
+async function loadGroupUsers() {
+
+    if (!groupUsers) return;
+
+    if (
+        allUsers.length === 0
+    ) {
+        await loadAllUsers();
+    }
+
+    groupUsers.innerHTML = "";
+
+    if (allUsers.length === 0) {
+
+        groupUsers.innerHTML =
+            "<div class='empty-state'>No hay otras personas registradas.</div>";
+
+        return;
+    }
+
+    allUsers.forEach((user) => {
+
+        const label =
+            document.createElement("label");
+
+        label.className =
+            "group-user";
+
+        const checkbox =
+            document.createElement("input");
+
+        checkbox.type = "checkbox";
+
+        checkbox.value =
+            user.uid;
+
+        checkbox.addEventListener(
+            "change",
+            () => {
+
+                if (checkbox.checked) {
+
+                    selectedGroupUsers.add(
+                        user.uid
+                    );
+
+                } else {
+
+                    selectedGroupUsers.delete(
+                        user.uid
+                    );
+                }
+            }
+        );
+
+        const name =
+            document.createElement("span");
+
+        name.textContent =
+            "@" +
+            (
+                user.username ||
+                "usuario"
+            );
+
+        label.appendChild(
+            checkbox
+        );
+
+        label.appendChild(
+            name
+        );
+
+        groupUsers.appendChild(
+            label
+        );
+    });
+}
+
+
+/* =========================================================
+   GRUPOS - CERRAR MODAL
+========================================================= */
+
+function closeGroupModal() {
+
+    if (!groupModal) return;
+
+    groupModal.classList.add("hidden");
+
+    selectedGroupUsers =
+        new Set();
+}
+
+
+/* =========================================================
+   GRUPOS - CREAR
+========================================================= */
+
+async function createGroup() {
+
+    if (!currentUser) return;
+
+    const name =
+        groupName?.value.trim();
+
+    if (!name) {
+
+        alert(
+            "Escribí un nombre para el grupo."
+        );
+
+        return;
+    }
+
+    if (selectedGroupUsers.size === 0) {
+
+        alert(
+            "Seleccioná al menos una persona."
+        );
+
+        return;
+    }
+
+    if (name.length > 100) {
+
+        alert(
+            "El nombre del grupo es demasiado largo."
+        );
+
+        return;
+    }
+
+    if (confirmGroupButton) {
+        confirmGroupButton.disabled = true;
+    }
+
+    try {
+
+        const members = [
+            currentUser.uid,
+            ...selectedGroupUsers
+        ];
+
+        const conversation =
+            await addDoc(
+                collection(
+                    db,
+                    "conversations"
+                ),
+                {
+                    members: members,
+                    isGroup: true,
+                    groupName: name,
+                    createdAt: serverTimestamp(),
+                    lastMessage: "",
+                    lastMessageAt: serverTimestamp()
+                }
+            );
+
+        closeGroupModal();
+
+        openConversation(
+            conversation.id,
+            {
+                members: members,
+                isGroup: true,
+                groupName: name
+            },
+            null
+        );
+
+    } catch (error) {
+
+        console.error(error);
+
+        alert(
+            "No se pudo crear el grupo.\n\n" +
+            error.code +
+            "\n" +
+            error.message
+        );
+
+    } finally {
+
+        if (confirmGroupButton) {
+            confirmGroupButton.disabled = false;
+        }
+    }
+}
+
+
+/* =========================================================
+   CONTADOR
+========================================================= */
+
+function updateCharacterCounter() {
+
+    if (!messageInput || !characterCounter) {
+        return;
+    }
+
+    characterCounter.textContent =
+        `${messageInput.value.length}/4000`;
+}
+
+
+/* =========================================================
+   ADMIN - ABRIR
+========================================================= */
+
+async function openAdminPanel() {
+
+    if (
+        !currentProfile ||
+        currentProfile.usernameLower !==
+            ADMIN_USERNAME.toLowerCase()
+    ) {
+        return;
+    }
+
+    if (!adminPanel) return;
+
+    adminPanel.classList.remove("hidden");
+
+    if (adminDetails) {
+        adminDetails.classList.add("hidden");
+    }
+
+    if (adminSearch) {
+        adminSearch.value = "";
+    }
+
+    await loadAdminUsers();
+}
+
+
+/* =========================================================
+   ADMIN - CERRAR
+========================================================= */
+
+function closeAdminPanel() {
+
+    if (!adminPanel) return;
+
+    adminPanel.classList.add("hidden");
+}
+
+
+/* =========================================================
+   ADMIN - CARGAR USUARIOS
+========================================================= */
+
+async function loadAdminUsers() {
+
+    if (!adminUsers) return;
+
+    if (adminSyncStatus) {
+        adminSyncStatus.textContent =
+            "Cargando usuarios...";
+    }
+
+    try {
+
+        const snapshot =
+            await getDocs(
+                collection(db, "users")
+            );
+
+        const users = [];
+
+        snapshot.forEach((item) => {
+
+            users.push({
+                uid: item.id,
+                ...item.data()
+            });
+        });
+
+        users.sort((a, b) => {
+
+            const nameA =
+                (a.username || "").toLowerCase();
+
+            const nameB =
+                (b.username || "").toLowerCase();
+
+            return nameA.localeCompare(nameB);
+        });
+
+        allAdminUsers =
+            users;
+
+        renderAdminUsers();
+
+        if (adminSyncStatus) {
+            adminSyncStatus.textContent =
+                `${users.length} usuarios`;
+        }
+
+    } catch (error) {
+
+        console.error(error);
+
+        if (adminSyncStatus) {
+            adminSyncStatus.textContent =
+                "Error cargando usuarios";
+        }
+
+        alert(
+            "No se pudieron cargar los usuarios del panel.\n\n" +
+            error.code +
+            "\n" +
+            error.message
+        );
+    }
+}
+
+
+/* =========================================================
+   ADMIN - LISTA
+========================================================= */
+
+let allAdminUsers = [];
+
+
+function renderAdminUsers() {
+
+    if (!adminUsers) return;
+
+    const search =
+        (
+            adminSearch?.value ||
+            ""
+        )
+            .trim()
+            .toLowerCase();
+
+    const filtered =
+        allAdminUsers.filter(
+            user => {
+
+                const username =
+                    (
+                        user.username ||
+                        ""
+                    ).toLowerCase();
+
+                const email =
+                    (
+                        user.email ||
+                        ""
+                    ).toLowerCase();
+
+                const uid =
+                    (
+                        user.uid ||
+                        ""
+                    ).toLowerCase();
+
+                return (
+                    username.includes(search) ||
+                    email.includes(search) ||
+                    uid.includes(search)
+                );
+            }
+        );
+
+    adminUsers.innerHTML = "";
+
+    if (
+        adminEmpty
+    ) {
+        adminEmpty.classList.toggle(
+            "hidden",
+            filtered.length !== 0
+        );
+    }
+
+    filtered.forEach((user) => {
+
+        const button =
+            document.createElement("button");
+
+        button.type = "button";
+
+        button.className =
+            "admin-user-item";
+
+        const name =
+            document.createElement("strong");
+
+        name.textContent =
+            "@" +
+            (
+                user.username ||
+                "sin usuario"
+            );
+
+        const email =
+            document.createElement("span");
+
+        email.textContent =
+            user.email ||
+            "";
+
+        button.appendChild(name);
+        button.appendChild(email);
+
+        button.addEventListener(
+            "click",
+            () => {
+
+                showAdminUserDetails(
+                    user
+                );
+            }
+        );
+
+        adminUsers.appendChild(
+            button
+        );
+    });
+}
+
+
+/* =========================================================
+   ADMIN - DETALLES
+========================================================= */
+
+async function showAdminUserDetails(user) {
+
+    if (!adminDetails) return;
+
+    adminDetails.classList.remove("hidden");
+
+    if (adminDetailName) {
+        adminDetailName.textContent =
+            "@" +
+            (
+                user.username ||
+                "sin usuario"
+            );
+    }
+
+    if (adminDetailEmail) {
+        adminDetailEmail.textContent =
+            user.email ||
+            "Sin email";
+    }
+
+    if (adminDetailUid) {
+        adminDetailUid.textContent =
+            user.uid;
+    }
+
+    if (adminDetailCreated) {
+
+        if (user.createdAt?.toDate) {
+
+            adminDetailCreated.textContent =
+                user.createdAt
+                    .toDate()
+                    .toLocaleString("es-UY");
+
+        } else {
+
+            adminDetailCreated.textContent =
+                "Desconocido";
+        }
+    }
+
+    await loadAdminUserHistory(
+        user.uid
     );
 }
 
 
-/* =========================
-   ESCAPAR HTML
-========================= */
+/* =========================================================
+   ADMIN - HISTORIAL
+========================================================= */
 
-function escapeHtml(text) {
+async function loadAdminUserHistory(uid) {
 
-    const div =
-        document.createElement(
-            "div"
+    if (!adminHistory) return;
+
+    adminHistory.innerHTML =
+        "Cargando historial...";
+
+    try {
+
+        const q =
+            query(
+                collection(
+                    db,
+                    "conversations"
+                ),
+                where(
+                    "members",
+                    "array-contains",
+                    uid
+                )
+            );
+
+        const snapshot =
+            await getDocs(q);
+
+        adminHistory.innerHTML = "";
+
+        if (snapshot.empty) {
+
+            adminHistory.textContent =
+                "Este usuario todavía no tiene conversaciones.";
+
+            return;
+        }
+
+        const conversations = [];
+
+        for (
+            const item of snapshot.docs
+        ) {
+
+            const data =
+                item.data();
+
+            let title =
+                "Conversación";
+
+            if (
+                data.isGroup === true
+            ) {
+
+                title =
+                    "👥 " +
+                    (
+                        data.groupName ||
+                        "Grupo"
+                    );
+
+            } else {
+
+                const otherUid =
+                    (
+                        data.members ||
+                        []
+                    ).find(
+                        id => id !== uid
+                    );
+
+                if (otherUid) {
+
+                    const otherUser =
+                        allAdminUsers.find(
+                            user =>
+                                user.uid === otherUid
+                        );
+
+                    if (otherUser) {
+
+                        title =
+                            "@" +
+                            (
+                                otherUser.username ||
+                                "usuario"
+                            );
+                    }
+                }
+            }
+
+            conversations.push({
+                title: title,
+                lastMessage:
+                    data.lastMessage ||
+                    "Sin mensajes",
+                date:
+                    data.lastMessageAt
+                        ?.toDate?.() ||
+                    null
+            });
+        }
+
+        conversations.sort(
+            (a, b) => {
+
+                const aTime =
+                    a.date
+                        ? a.date.getTime()
+                        : 0;
+
+                const bTime =
+                    b.date
+                        ? b.date.getTime()
+                        : 0;
+
+                return bTime - aTime;
+            }
         );
 
-    div.textContent =
-        text || "";
+        conversations.forEach(
+            conversation => {
 
-    return div.innerHTML;
+                const element =
+                    document.createElement("div");
+
+                element.className =
+                    "admin-history-item";
+
+                const title =
+                    document.createElement("strong");
+
+                title.textContent =
+                    conversation.title;
+
+                const message =
+                    document.createElement("span");
+
+                message.textContent =
+                    conversation.lastMessage;
+
+                const date =
+                    document.createElement("small");
+
+                if (conversation.date) {
+
+                    date.textContent =
+                        conversation.date
+                            .toLocaleString(
+                                "es-UY"
+                            );
+                }
+
+                element.appendChild(title);
+                element.appendChild(message);
+                element.appendChild(date);
+
+                adminHistory.appendChild(
+                    element
+                );
+            }
+        );
+
+    } catch (error) {
+
+        console.error(error);
+
+        adminHistory.textContent =
+            "No se pudo cargar el historial: " +
+            error.message;
+    }
 }
+
+
+/* =========================================================
+   EVENTOS - AUTENTICACIÓN
+========================================================= */
+
+if (loginForm) {
+
+    loginForm.addEventListener(
+        "submit",
+        (event) => {
+
+            event.preventDefault();
+
+            login();
+        }
+    );
+}
+
+
+if (registerForm) {
+
+    registerForm.addEventListener(
+        "submit",
+        (event) => {
+
+            event.preventDefault();
+
+            register();
+        }
+    );
+}
+
+
+if (showRegisterButton) {
+
+    showRegisterButton.addEventListener(
+        "click",
+        showRegister
+    );
+}
+
+
+if (showLoginButton) {
+
+    showLoginButton.addEventListener(
+        "click",
+        showLogin
+    );
+}
+
+
+/* =========================================================
+   EVENTOS - APP
+========================================================= */
+
+if (logoutButton) {
+
+    logoutButton.addEventListener(
+        "click",
+        logout
+    );
+}
+
+
+if (userSearch) {
+
+    userSearch.addEventListener(
+        "input",
+        searchUsers
+    );
+
+    userSearch.addEventListener(
+        "focus",
+        () => {
+
+            renderPeople(
+                userSearch.value
+            );
+        }
+    );
+}
+
+
+if (sendButton) {
+
+    sendButton.addEventListener(
+        "click",
+        sendMessage
+    );
+}
+
+
+if (messageInput) {
+
+    messageInput.addEventListener(
+        "input",
+        updateCharacterCounter
+    );
+
+    messageInput.addEventListener(
+        "keydown",
+        (event) => {
+
+            if (
+                event.key === "Enter" &&
+                !event.shiftKey
+            ) {
+
+                event.preventDefault();
+
+                sendMessage();
+            }
+        }
+    );
+}
+
+
+if (deleteChatButton) {
+
+    deleteChatButton.addEventListener(
+        "click",
+        deleteCurrentChat
+    );
+}
+
+
+/* =========================================================
+   EVENTOS - GRUPOS
+========================================================= */
+
+if (createGroupButton) {
+
+    createGroupButton.addEventListener(
+        "click",
+        openGroupModal
+    );
+}
+
+
+if (cancelGroupButton) {
+
+    cancelGroupButton.addEventListener(
+        "click",
+        closeGroupModal
+    );
+}
+
+
+if (confirmGroupButton) {
+
+    confirmGroupButton.addEventListener(
+        "click",
+        createGroup
+    );
+}
+
+
+if (groupModal) {
+
+    groupModal.addEventListener(
+        "click",
+        (event) => {
+
+            if (
+                event.target === groupModal
+            ) {
+                closeGroupModal();
+            }
+        }
+    );
+}
+
+
+/* =========================================================
+   EVENTOS - ADMIN
+========================================================= */
+
+if (adminButton) {
+
+    adminButton.addEventListener(
+        "click",
+        openAdminPanel
+    );
+}
+
+
+if (adminCloseButton) {
+
+    adminCloseButton.addEventListener(
+        "click",
+        closeAdminPanel
+    );
+}
+
+
+if (adminSearch) {
+
+    adminSearch.addEventListener(
+        "input",
+        renderAdminUsers
+    );
+}
+
+
+if (adminSyncButton) {
+
+    adminSyncButton.addEventListener(
+        "click",
+        loadAdminUsers
+    );
+}
+
+
+/* =========================================================
+   CONTADOR INICIAL
+========================================================= */
+
+updateCharacterCounter();
