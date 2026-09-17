@@ -343,7 +343,9 @@ async function register() {
 
     if (!username || !email || !password) {
 
-        alert("Completá todos los campos.");
+        alert(
+            "Completá todos los campos."
+        );
 
         return;
     }
@@ -374,35 +376,13 @@ async function register() {
 
     try {
 
+        console.log(
+            "PASO 1: creando Authentication..."
+        );
+
+
         const usernameLower =
             username.toLowerCase();
-
-
-        const usersQuery =
-            query(
-                collection(db, "users"),
-                where(
-                    "usernameLower",
-                    "==",
-                    usernameLower
-                )
-            );
-
-
-        const existingUsers =
-            await getDocs(usersQuery);
-
-
-        if (!existingUsers.empty) {
-
-            alert(
-                "Ese nombre de usuario ya existe."
-            );
-
-            creatingAccount = false;
-
-            return;
-        }
 
 
         const account =
@@ -413,6 +393,34 @@ async function register() {
             );
 
 
+        console.log(
+            "PASO 2: Authentication creado"
+        );
+
+        console.log(
+            "UID:",
+            account.user.uid
+        );
+
+        console.log(
+            "Usuario actual:",
+            auth.currentUser?.uid
+        );
+
+
+        if (!auth.currentUser) {
+
+            throw new Error(
+                "Firebase Authentication dice que no hay usuario conectado."
+            );
+        }
+
+
+        console.log(
+            "PASO 3: creando users/UID..."
+        );
+
+
         await setDoc(
             doc(
                 db,
@@ -420,11 +428,31 @@ async function register() {
                 account.user.uid
             ),
             {
-                username: username,
-                usernameLower: usernameLower,
-                email: email,
-                createdAt: serverTimestamp()
+                username:
+                    username,
+
+                usernameLower:
+                    usernameLower,
+
+                email:
+                    email,
+
+                createdAt:
+                    serverTimestamp()
             }
+        );
+
+
+        console.log(
+            "PASO 4: users/UID creado correctamente"
+        );
+
+
+        creatingAccount = false;
+
+
+        await initializeAuthenticatedUser(
+            account.user
         );
 
 
@@ -435,13 +463,35 @@ async function register() {
 
     } catch (error) {
 
-        console.error(error);
+        console.error(
+            "ERROR REGISTER:",
+            error
+        );
+
+
+        console.error(
+            "Código:",
+            error.code
+        );
+
+
+        console.error(
+            "Mensaje:",
+            error.message
+        );
+
 
         alert(
             "Error al crear la cuenta:\n\n" +
-            error.code +
+            (
+                error.code ||
+                "sin código"
+            ) +
             "\n\n" +
-            error.message
+            (
+                error.message ||
+                ""
+            )
         );
 
     } finally {
