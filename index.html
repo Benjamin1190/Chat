@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ChatBenja</title>
+    <title>Chat</title>
     <link rel="stylesheet" href="style.css">
 </head>
 
@@ -11,15 +11,31 @@
 
 <div id="authScreen" class="auth-screen">
     <div class="auth-box">
+
         <div class="logo">💬</div>
+
         <h1>Chat</h1>
         <p class="subtitle">Tu chat privado</p>
 
         <div id="loginForm">
-            <input id="loginUsername" type="text" placeholder="Nombre de usuario">
-            <input id="loginPassword" type="password" placeholder="Contraseña">
 
-            <button id="loginButton">Iniciar sesión</button>
+            <input
+                id="loginUsername"
+                type="text"
+                placeholder="Nombre de usuario"
+                autocomplete="username"
+            >
+
+            <input
+                id="loginPassword"
+                type="password"
+                placeholder="Contraseña"
+                autocomplete="current-password"
+            >
+
+            <button id="loginButton">
+                Iniciar sesión
+            </button>
 
             <p>
                 ¿No tienes cuenta?
@@ -27,13 +43,29 @@
                     Registrarme
                 </button>
             </p>
+
         </div>
 
-        <div id="registerForm" class="hidden">
-            <input id="registerUsername" type="text" placeholder="Nombre de usuario">
-            <input id="registerPassword" type="password" placeholder="Contraseña">
 
-            <button id="registerButton">Crear cuenta</button>
+        <div id="registerForm" class="hidden">
+
+            <input
+                id="registerUsername"
+                type="text"
+                placeholder="Nombre de usuario"
+                autocomplete="username"
+            >
+
+            <input
+                id="registerPassword"
+                type="password"
+                placeholder="Contraseña"
+                autocomplete="new-password"
+            >
+
+            <button id="registerButton">
+                Crear cuenta
+            </button>
 
             <p>
                 ¿Ya tienes cuenta?
@@ -41,9 +73,11 @@
                     Iniciar sesión
                 </button>
             </p>
+
         </div>
 
         <div id="authMessage"></div>
+
     </div>
 </div>
 
@@ -53,23 +87,37 @@
     <aside class="sidebar">
 
         <div class="sidebar-header">
+
             <div>
-                <h2>ChatBenja</h2>
+                <h2>Chat</h2>
                 <span id="currentUser"></span>
             </div>
 
-            <button id="logoutButton" title="Cerrar sesión">↪</button>
+            <button id="logoutButton" title="Cerrar sesión">
+                ↪
+            </button>
+
         </div>
+
 
         <div class="search">
-            <input id="userSearch" type="text" placeholder="Buscar usuarios...">
+
+            <input
+                id="userSearch"
+                type="text"
+                placeholder="Buscar usuarios..."
+            >
+
         </div>
 
+
         <div id="searchResults"></div>
+
 
         <div class="section-title">
             MIS CHATS
         </div>
+
 
         <div id="chatList"></div>
 
@@ -79,9 +127,17 @@
     <main class="chat">
 
         <div id="welcome" class="welcome">
-            <div class="welcome-icon">💬</div>
-            <h2>Bienvenido a ChatBenja</h2>
-            <p>Selecciona un chat para empezar a hablar.</p>
+
+            <div class="welcome-icon">
+                💬
+            </div>
+
+            <h2>Bienvenido a Chat</h2>
+
+            <p>
+                Selecciona un chat para empezar a hablar.
+            </p>
+
         </div>
 
 
@@ -90,8 +146,13 @@
             <header class="chat-header">
 
                 <div>
-                    <div id="chatTitle">Chat</div>
+
+                    <div id="chatTitle">
+                        Chat
+                    </div>
+
                     <small id="chatStatus"></small>
+
                 </div>
 
             </header>
@@ -109,7 +170,10 @@
                     hidden
                 >
 
-                <button id="imageButton" title="Enviar imagen">
+                <button
+                    id="imageButton"
+                    title="Enviar imagen"
+                >
                     📷
                 </button>
 
@@ -132,9 +196,9 @@
 
 </div>
 
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="app.js"></script>
 
 </body>
 </html>
-
