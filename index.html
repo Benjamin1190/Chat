@@ -1,53 +1,34 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
     <meta charset="UTF-8">
-
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <title>Chat</title>
 
-    <link
-        rel="stylesheet"
-        href="style.css"
-    >
+    <link rel="stylesheet" href="style.css">
 </head>
-
 
 <body>
 
+    <!-- =========================
+         AUTENTICACIÓN
+    ========================== -->
 
-    <!-- =================================
-         PANTALLA DE AUTENTICACIÓN
-    ================================== -->
-
-    <div
-        id="authScreen"
-        class="auth-screen"
-    >
+    <div id="authScreen" class="auth-screen">
 
         <div class="auth-box">
 
-            <div class="logo">
-                💬
-            </div>
+            <div class="logo">💬</div>
 
-            <h1>
-                Chat
-            </h1>
+            <h1>Chat</h1>
 
             <p class="subtitle">
-                Tu chat privado
+                Inicia sesión para continuar
             </p>
 
 
-            <!-- =============================
-                 LOGIN
-            ============================== -->
+            <!-- LOGIN -->
 
             <div id="loginForm">
 
@@ -65,39 +46,26 @@
                     autocomplete="current-password"
                 >
 
-                <button
-                    id="loginButton"
-                    type="button"
-                >
+                <button id="loginButton">
                     Iniciar sesión
                 </button>
 
-
                 <p>
-
-                    ¿No tienes cuenta?
-
+                    ¿No tienes una cuenta?
                     <button
                         id="showRegister"
                         class="link-button"
-                        type="button"
                     >
-                        Registrarme
+                        Registrarte
                     </button>
-
                 </p>
 
             </div>
 
 
-            <!-- =============================
-                 REGISTRO
-            ============================== -->
+            <!-- REGISTRO -->
 
-            <div
-                id="registerForm"
-                class="hidden"
-            >
+            <div id="registerForm" class="hidden">
 
                 <input
                     id="registerEmail"
@@ -110,8 +78,8 @@
                     id="registerUsername"
                     type="text"
                     placeholder="Nombre de usuario"
+                    maxlength="30"
                     autocomplete="username"
-                    maxlength="20"
                 >
 
                 <input
@@ -121,26 +89,18 @@
                     autocomplete="new-password"
                 >
 
-                <button
-                    id="registerButton"
-                    type="button"
-                >
+                <button id="registerButton">
                     Crear cuenta
                 </button>
 
-
                 <p>
-
-                    ¿Ya tienes cuenta?
-
+                    ¿Ya tienes una cuenta?
                     <button
                         id="showLogin"
                         class="link-button"
-                        type="button"
                     >
                         Iniciar sesión
                     </button>
-
                 </p>
 
             </div>
@@ -153,59 +113,47 @@
     </div>
 
 
-
-    <!-- =================================
+    <!-- =========================
          APLICACIÓN
-    ================================== -->
+    ========================== -->
 
-    <div
-        id="app"
-        class="app hidden"
-    >
+    <div id="app" class="app hidden">
 
 
-        <!-- =================================
-             BARRA LATERAL
-        ================================== -->
+        <!-- =========================
+             SIDEBAR
+        ========================== -->
 
         <aside class="sidebar">
-
-
-            <!-- CABECERA -->
 
             <div class="sidebar-header">
 
                 <div>
+                    <h2>💬 Chat</h2>
 
-                    <h2>
-                        Chat
-                    </h2>
-
-                    <span id="currentUser"></span>
-
+                    <span id="currentUser">
+                        @usuario
+                    </span>
                 </div>
-
 
                 <button
                     id="logoutButton"
-                    type="button"
                     title="Cerrar sesión"
                 >
-                    ↪
+                    🚪
                 </button>
 
             </div>
 
 
-
-            <!-- BUSCADOR -->
+            <!-- BUSCAR USUARIOS -->
 
             <div class="search">
 
                 <input
                     id="userSearch"
                     type="text"
-                    placeholder="Buscar usuarios..."
+                    placeholder="Buscar usuario..."
                     autocomplete="off"
                 >
 
@@ -217,51 +165,38 @@
             <div id="searchResults"></div>
 
 
-
             <!-- CREAR GRUPO -->
 
             <button
                 id="createGroupButton"
                 class="create-group-button"
-                type="button"
             >
                 👥 Crear grupo
             </button>
 
 
-
-            <!-- TÍTULO CHATS -->
-
             <div class="section-title">
-                MIS CHATS
+                CHATS
             </div>
-
 
 
             <!-- LISTA DE CHATS -->
 
             <div id="chatList"></div>
 
-
         </aside>
 
 
-
-        <!-- =================================
-             ZONA PRINCIPAL DEL CHAT
-        ================================== -->
+        <!-- =========================
+             CHAT
+        ========================== -->
 
         <main class="chat">
 
 
-            <!-- =============================
-                 PANTALLA DE BIENVENIDA
-            ============================== -->
+            <!-- BIENVENIDA -->
 
-            <div
-                id="welcome"
-                class="welcome"
-            >
+            <div id="welcome" class="welcome">
 
                 <div class="welcome-icon">
                     💬
@@ -272,16 +207,13 @@
                 </h2>
 
                 <p>
-                    Selecciona un chat para empezar a hablar.
+                    Busca un usuario para comenzar una conversación.
                 </p>
 
             </div>
 
 
-
-            <!-- =============================
-                 VENTANA DEL CHAT
-            ============================== -->
+            <!-- VENTANA DEL CHAT -->
 
             <div
                 id="chatWindow"
@@ -289,10 +221,9 @@
             >
 
 
-                <!-- CABECERA DEL CHAT -->
+                <!-- HEADER -->
 
-                <header class="chat-header">
-
+                <div class="chat-header">
 
                     <div>
 
@@ -300,29 +231,24 @@
                             Chat
                         </div>
 
-                        <small id="chatStatus"></small>
+                        <span id="chatStatus">
+                            Chat privado
+                        </span>
 
                     </div>
 
 
-                    <!-- ELIMINAR CHAT -->
-
                     <button
                         id="deleteChatButton"
-                        type="button"
                         title="Eliminar chat"
                     >
                         🗑️
                     </button>
 
-
-                </header>
-
+                </div>
 
 
-                <!-- =============================
-                     MENSAJES
-                ============================== -->
+                <!-- MENSAJES -->
 
                 <div
                     id="messages"
@@ -330,94 +256,74 @@
                 ></div>
 
 
-
-                <!-- =============================
-                     ESCRIBIR MENSAJE
-                ============================== -->
+                <!-- ESCRIBIR -->
 
                 <div class="message-area">
 
-
                     <div class="message-input-wrapper">
-
 
                         <input
                             id="messageInput"
                             type="text"
+                            maxlength="1000"
                             placeholder="Escribe un mensaje..."
                             autocomplete="off"
-                            maxlength="1000"
                         >
 
-
-                        <div
+                        <span
                             id="characterCounter"
                             class="character-counter"
                         >
                             0 / 1000
-                        </div>
-
+                        </span>
 
                     </div>
 
 
-
                     <button
                         id="sendButton"
-                        type="button"
-                        title="Enviar mensaje"
+                        title="Enviar"
                     >
                         ➤
                     </button>
 
-
                 </div>
-
 
             </div>
 
-
         </main>
-
 
     </div>
 
 
-
-    <!-- =================================
-         MODAL PARA CREAR GRUPO
-    ================================== -->
+    <!-- =========================
+         MODAL CREAR GRUPO
+    ========================== -->
 
     <div
         id="groupModal"
         class="modal hidden"
     >
 
-
         <div class="modal-box">
-
 
             <h2>
                 👥 Crear grupo
             </h2>
 
 
-            <!-- NOMBRE DEL GRUPO -->
-
             <input
                 id="groupName"
                 type="text"
                 placeholder="Nombre del grupo"
-                maxlength="30"
+                maxlength="50"
             >
 
 
             <p>
-                Seleccioná los usuarios que querés agregar:
+                Selecciona los usuarios:
             </p>
 
-
-            <!-- USUARIOS -->
 
             <div
                 id="groupUsers"
@@ -425,47 +331,31 @@
             ></div>
 
 
-            <!-- BOTONES -->
-
             <div class="modal-buttons">
 
-
-                <button
-                    id="cancelGroupButton"
-                    type="button"
-                >
+                <button id="cancelGroupButton">
                     Cancelar
                 </button>
 
-
-                <button
-                    id="confirmGroupButton"
-                    type="button"
-                >
+                <button id="confirmGroupButton">
                     Crear grupo
                 </button>
 
-
             </div>
 
-
         </div>
-
 
     </div>
 
 
-
-    <!-- =================================
+    <!-- =========================
          JAVASCRIPT
-    ================================== -->
+    ========================== -->
 
     <script
         type="module"
         src="app.js"
     ></script>
 
-
 </body>
-
 </html>
