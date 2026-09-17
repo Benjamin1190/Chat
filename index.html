@@ -1,361 +1,405 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>Chat</title>
-
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chat</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-    <!-- =========================
-         AUTENTICACIÓN
-    ========================== -->
+  <!-- LOGIN / REGISTRO -->
+  <section id="authScreen" class="auth-screen">
 
-    <div id="authScreen" class="auth-screen">
+    <div class="auth-card">
 
-        <div class="auth-box">
+      <div class="logo">💬</div>
+      <h1>Chat</h1>
+      <p class="auth-subtitle">Iniciá sesión para continuar</p>
 
-            <div class="logo">💬</div>
+      <div id="authMessage" class="auth-message"></div>
 
-            <h1>Chat</h1>
+      <form id="loginForm">
 
-            <p class="subtitle">
-                Inicia sesión para continuar
-            </p>
+        <input
+          id="loginEmail"
+          type="email"
+          placeholder="Correo electrónico"
+          autocomplete="email"
+          required
+        >
 
+        <input
+          id="loginPassword"
+          type="password"
+          placeholder="Contraseña"
+          autocomplete="current-password"
+          required
+        >
 
-            <!-- LOGIN -->
+        <button id="loginButton" type="submit">
+          Iniciar sesión
+        </button>
 
-            <div id="loginForm">
+      </form>
 
-                <input
-                    id="loginEmail"
-                    type="email"
-                    placeholder="Correo electrónico"
-                    autocomplete="email"
-                >
+      <form id="registerForm" class="hidden">
 
-                <input
-                    id="loginPassword"
-                    type="password"
-                    placeholder="Contraseña"
-                    autocomplete="current-password"
-                >
+        <input
+          id="registerEmail"
+          type="email"
+          placeholder="Correo electrónico"
+          autocomplete="email"
+          required
+        >
 
-                <button id="loginButton">
-                    Iniciar sesión
-                </button>
+        <input
+          id="registerUsername"
+          type="text"
+          placeholder="Nombre de usuario"
+          maxlength="30"
+          required
+        >
 
-                <p>
-                    ¿No tienes una cuenta?
-                    <button
-                        id="showRegister"
-                        class="link-button"
-                    >
-                        Registrarte
-                    </button>
-                </p>
+        <input
+          id="registerPassword"
+          type="password"
+          placeholder="Contraseña"
+          minlength="6"
+          autocomplete="new-password"
+          required
+        >
 
-            </div>
+        <button id="registerButton" type="submit">
+          Crear cuenta
+        </button>
 
+      </form>
 
-            <!-- REGISTRO -->
+      <button id="showRegister" class="secondary-button" type="button">
+        Crear una cuenta
+      </button>
 
-            <div id="registerForm" class="hidden">
+      <button id="showLogin" class="secondary-button hidden" type="button">
+        Ya tengo una cuenta
+      </button>
 
-                <input
-                    id="registerEmail"
-                    type="email"
-                    placeholder="Correo electrónico"
-                    autocomplete="email"
-                >
+    </div>
 
-                <input
-                    id="registerUsername"
-                    type="text"
-                    placeholder="Nombre de usuario"
-                    maxlength="30"
-                    autocomplete="username"
-                >
-
-                <input
-                    id="registerPassword"
-                    type="password"
-                    placeholder="Contraseña"
-                    autocomplete="new-password"
-                >
-
-                <button id="registerButton">
-                    Crear cuenta
-                </button>
-
-                <p>
-                    ¿Ya tienes una cuenta?
-                    <button
-                        id="showLogin"
-                        class="link-button"
-                    >
-                        Iniciar sesión
-                    </button>
-                </p>
-
-            </div>
+  </section>
 
 
-            <div id="authMessage"></div>
+  <!-- APLICACIÓN -->
+  <div id="app" class="app hidden">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+
+      <div class="sidebar-header">
+
+        <div class="current-user-container">
+          <div class="user-avatar">👤</div>
+
+          <div>
+            <strong id="currentUser">Usuario</strong>
+            <span>En línea</span>
+          </div>
+        </div>
+
+        <div class="header-buttons">
+
+          <button
+            id="adminButton"
+            class="admin-button hidden"
+            type="button"
+          >
+            🛡️ Admin
+          </button>
+
+          <button id="logoutButton" type="button">
+            Salir
+          </button>
 
         </div>
 
-    </div>
+      </div>
 
 
-    <!-- =========================
-         APLICACIÓN
-    ========================== -->
+      <div class="sidebar-actions">
 
-    <div id="app" class="app hidden">
+        <input
+          id="userSearch"
+          type="text"
+          placeholder="Buscar usuario..."
+          autocomplete="off"
+        >
 
+        <button
+          id="createGroupButton"
+          type="button"
+        >
+          ＋ Grupo
+        </button>
 
-        <!-- =========================
-             SIDEBAR
-        ========================== -->
+      </div>
 
-        <aside class="sidebar">
 
-            <div class="sidebar-header">
+      <div id="searchResults" class="search-results"></div>
 
-                <div>
-                    <h2>💬 Chat</h2>
+      <div class="chat-list-title">
+        Conversaciones
+      </div>
 
-                    <span id="currentUser">
-                        @usuario
-                    </span>
-                </div>
+      <div id="chatList" class="chat-list"></div>
 
-                <button
-                    id="logoutButton"
-                    title="Cerrar sesión"
-                >
-                    🚪
-                </button>
+    </aside>
 
-            </div>
 
+    <!-- CHAT -->
+    <main class="chat-area">
 
-            <!-- BUSCAR USUARIOS -->
+      <div id="welcome" class="welcome">
 
-            <div class="search">
+        <div class="welcome-icon">💬</div>
 
-                <input
-                    id="userSearch"
-                    type="text"
-                    placeholder="Buscar usuario..."
-                    autocomplete="off"
-                >
+        <h2>Bienvenido a Chat</h2>
 
-            </div>
+        <p>
+          Seleccioná una conversación para empezar.
+        </p>
 
+      </div>
 
-            <!-- RESULTADOS DE BÚSQUEDA -->
 
-            <div id="searchResults"></div>
+      <div id="chatWindow" class="chat-window hidden">
 
+        <header class="chat-header">
 
-            <!-- CREAR GRUPO -->
+          <div>
 
-            <button
-                id="createGroupButton"
-                class="create-group-button"
-            >
-                👥 Crear grupo
-            </button>
-
-
-            <div class="section-title">
-                CHATS
-            </div>
-
-
-            <!-- LISTA DE CHATS -->
-
-            <div id="chatList"></div>
-
-        </aside>
-
-
-        <!-- =========================
-             CHAT
-        ========================== -->
-
-        <main class="chat">
-
-
-            <!-- BIENVENIDA -->
-
-            <div id="welcome" class="welcome">
-
-                <div class="welcome-icon">
-                    💬
-                </div>
-
-                <h2>
-                    Bienvenido a Chat
-                </h2>
-
-                <p>
-                    Busca un usuario para comenzar una conversación.
-                </p>
-
-            </div>
-
-
-            <!-- VENTANA DEL CHAT -->
-
-            <div
-                id="chatWindow"
-                class="chat-window hidden"
-            >
-
-
-                <!-- HEADER -->
-
-                <div class="chat-header">
-
-                    <div>
-
-                        <div id="chatTitle">
-                            Chat
-                        </div>
-
-                        <span id="chatStatus">
-                            Chat privado
-                        </span>
-
-                    </div>
-
-
-                    <button
-                        id="deleteChatButton"
-                        title="Eliminar chat"
-                    >
-                        🗑️
-                    </button>
-
-                </div>
-
-
-                <!-- MENSAJES -->
-
-                <div
-                    id="messages"
-                    class="messages"
-                ></div>
-
-
-                <!-- ESCRIBIR -->
-
-                <div class="message-area">
-
-                    <div class="message-input-wrapper">
-
-                        <input
-                            id="messageInput"
-                            type="text"
-                            maxlength="1000"
-                            placeholder="Escribe un mensaje..."
-                            autocomplete="off"
-                        >
-
-                        <span
-                            id="characterCounter"
-                            class="character-counter"
-                        >
-                            0 / 1000
-                        </span>
-
-                    </div>
-
-
-                    <button
-                        id="sendButton"
-                        title="Enviar"
-                    >
-                        ➤
-                    </button>
-
-                </div>
-
-            </div>
-
-        </main>
-
-    </div>
-
-
-    <!-- =========================
-         MODAL CREAR GRUPO
-    ========================== -->
-
-    <div
-        id="groupModal"
-        class="modal hidden"
-    >
-
-        <div class="modal-box">
-
-            <h2>
-                👥 Crear grupo
+            <h2 id="chatTitle">
+              Chat
             </h2>
 
+            <span id="chatStatus">
+              En línea
+            </span>
 
-            <input
-                id="groupName"
-                type="text"
-                placeholder="Nombre del grupo"
-                maxlength="50"
+          </div>
+
+          <button
+            id="deleteChatButton"
+            class="danger-button"
+            type="button"
+          >
+            🗑️ Eliminar
+          </button>
+
+        </header>
+
+
+        <div id="messages" class="messages"></div>
+
+
+        <div class="message-composer">
+
+          <div class="character-row">
+            <span id="characterCounter">0/1000</span>
+          </div>
+
+          <div class="composer-row">
+
+            <textarea
+              id="messageInput"
+              maxlength="1000"
+              placeholder="Escribí un mensaje..."
+              rows="1"
+            ></textarea>
+
+            <button
+              id="sendButton"
+              type="button"
             >
+              ➤
+            </button>
 
-
-            <p>
-                Selecciona los usuarios:
-            </p>
-
-
-            <div
-                id="groupUsers"
-                class="group-users"
-            ></div>
-
-
-            <div class="modal-buttons">
-
-                <button id="cancelGroupButton">
-                    Cancelar
-                </button>
-
-                <button id="confirmGroupButton">
-                    Crear grupo
-                </button>
-
-            </div>
+          </div>
 
         </div>
 
+      </div>
+
+    </main>
+
+  </div>
+
+
+  <!-- MODAL CREAR GRUPO -->
+  <div id="groupModal" class="modal hidden">
+
+    <div class="modal-card">
+
+      <div class="modal-header">
+
+        <h2>Crear grupo</h2>
+
+        <button
+          id="cancelGroupButton"
+          type="button"
+        >
+          ×
+        </button>
+
+      </div>
+
+      <input
+        id="groupName"
+        type="text"
+        maxlength="50"
+        placeholder="Nombre del grupo"
+      >
+
+      <p class="modal-label">
+        Seleccioná los usuarios:
+      </p>
+
+      <div id="groupUsers" class="group-users"></div>
+
+      <div class="modal-actions">
+
+        <button
+          id="cancelGroupButtonBottom"
+          class="secondary-button"
+          type="button"
+        >
+          Cancelar
+        </button>
+
+        <button
+          id="confirmGroupButton"
+          type="button"
+        >
+          Crear grupo
+        </button>
+
+      </div>
+
     </div>
 
+  </div>
 
-    <!-- =========================
-         JAVASCRIPT
-    ========================== -->
 
-    <script
-        type="module"
-        src="app.js"
-    ></script>
+  <!-- ADMIN -->
+  <div id="adminPanel" class="admin-panel hidden">
+
+    <aside class="admin-sidebar">
+
+      <div class="admin-header">
+
+        <div>
+          <strong>🛡️ Administración</strong>
+          <span id="adminUserCount">0 usuarios</span>
+        </div>
+
+        <button
+          id="adminCloseButton"
+          type="button"
+        >
+          ×
+        </button>
+
+      </div>
+
+
+      <div class="admin-toolbar">
+
+        <input
+          id="adminSearch"
+          type="text"
+          placeholder="Buscar usuario..."
+        >
+
+        <button
+          id="adminSyncButton"
+          type="button"
+        >
+          🔄
+        </button>
+
+      </div>
+
+
+      <div id="adminSyncStatus" class="admin-sync-status"></div>
+
+      <div id="adminUsers" class="admin-users"></div>
+
+    </aside>
+
+
+    <section class="admin-main">
+
+      <div id="adminEmpty" class="admin-empty">
+
+        <div>👤</div>
+
+        <h2>Seleccioná un usuario</h2>
+
+        <p>
+          Acá vas a poder ver sus conversaciones e historial.
+        </p>
+
+      </div>
+
+
+      <div id="adminDetails" class="hidden">
+
+        <div class="admin-details-header">
+
+          <div>
+
+            <h2 id="adminDetailName">
+              Usuario
+            </h2>
+
+            <p id="adminDetailEmail">
+              correo
+            </p>
+
+          </div>
+
+        </div>
+
+
+        <div class="admin-info-grid">
+
+          <div>
+            <span>UID</span>
+            <strong id="adminDetailUid"></strong>
+          </div>
+
+          <div>
+            <span>Creado</span>
+            <strong id="adminDetailCreated"></strong>
+          </div>
+
+        </div>
+
+
+        <h3>
+          Historial
+        </h3>
+
+        <div id="adminHistory"></div>
+
+      </div>
+
+    </section>
+
+  </div>
+
+
+  <script type="module" src="app.js"></script>
 
 </body>
 </html>
