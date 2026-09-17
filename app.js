@@ -73,7 +73,9 @@ let adminUsersCache = [];
 ===================================================== */
 
 const authScreen = document.getElementById("authScreen");
-const appScreen = document.getElementById("appScreen");
+
+// El contenedor principal de la app en el HTML tiene id="app"
+const appScreen = document.getElementById("app");
 
 const loginForm = document.getElementById("loginForm");
 const registerForm = document.getElementById("registerForm");
@@ -85,16 +87,20 @@ const registerUsername = document.getElementById("registerUsername");
 const registerEmail = document.getElementById("registerEmail");
 const registerPassword = document.getElementById("registerPassword");
 
+// En el HTML los botones se llaman "showRegister" / "showLogin"
 const showRegisterButton =
-    document.getElementById("showRegisterButton");
+    document.getElementById("showRegister");
 
 const showLoginButton =
-    document.getElementById("showLoginButton");
+    document.getElementById("showLogin");
 
 
+// En el HTML el nombre de usuario se muestra en el <strong id="currentUser">
 const currentUsername =
-    document.getElementById("currentUsername");
+    document.getElementById("currentUser");
 
+// No existe un elemento dedicado al email en el sidebar; se deja en null
+// de forma segura (todo el código que lo usa está protegido con "if").
 const currentEmail =
     document.getElementById("currentEmail");
 
@@ -110,8 +116,9 @@ const searchResults =
 const chatList =
     document.getElementById("chatList");
 
+// En el HTML la pantalla de bienvenida tiene id="welcome"
 const welcomeScreen =
-    document.getElementById("welcomeScreen");
+    document.getElementById("welcome");
 
 const chatWindow =
     document.getElementById("chatWindow");
