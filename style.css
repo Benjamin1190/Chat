@@ -338,6 +338,59 @@ button {
     background: #22314a;
 }
 
+.search-user {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: calc(100% - 20px);
+
+    border: 0;
+    background: transparent;
+    color: inherit;
+    text-align: left;
+}
+
+.user-avatar {
+    width: 38px;
+    height: 38px;
+    flex-shrink: 0;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 12px;
+    background: #263b60;
+    color: #f8fafc;
+
+    font-size: 15px;
+    font-weight: 600;
+}
+
+.user-search-information {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.user-search-information strong {
+    color: #f8fafc;
+    font-size: 13px;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.user-search-information span {
+    color: #718096;
+    font-size: 11px;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 /* =====================================================
    CHATS
 ===================================================== */
@@ -361,6 +414,59 @@ button {
 
 .chat-list > *:hover {
     background: #1d2b40;
+}
+
+.chat-list-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+
+    border: 0;
+    background: transparent;
+    color: inherit;
+    text-align: left;
+}
+
+.chat-avatar {
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 14px;
+    background: #263b60;
+    color: #f8fafc;
+
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.chat-list-information {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.chat-list-information strong {
+    color: #f8fafc;
+    font-size: 14px;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.chat-list-information span {
+    color: #718096;
+    font-size: 12px;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 /* =====================================================
@@ -513,14 +619,35 @@ button {
         #0d1626;
 }
 
+.empty-state,
+.empty-messages {
+    padding: 20px;
+    text-align: center;
+    color: #718096;
+    font-size: 13px;
+}
+
 /*
-   LAS BURBUJAS SE ADAPTAN AL TEXTO
+   BURBUJAS DE MENSAJE (creadas dinámicamente por app.js)
 */
 
-.message {
-    width: fit-content;
+.message-wrapper {
+    display: flex;
+    flex-direction: column;
     max-width: min(65%, 600px);
+}
 
+.message-wrapper.own {
+    align-self: flex-end;
+    align-items: flex-end;
+}
+
+.message-wrapper.other {
+    align-self: flex-start;
+    align-items: flex-start;
+}
+
+.message-bubble {
     padding: 10px 14px;
 
     border-radius: 17px;
@@ -535,24 +662,27 @@ button {
     box-shadow: 0 3px 8px rgba(0, 0, 0, 0.16);
 }
 
-.message.mine {
-    align-self: flex-end;
-
+.message-wrapper.own .message-bubble {
     background: #2563eb;
     color: white;
 
     border-bottom-right-radius: 5px;
 }
 
-.message.theirs {
-    align-self: flex-start;
-
+.message-wrapper.other .message-bubble {
     background: #1d2a3e;
     color: #e5e7eb;
 
     border: 1px solid #293950;
 
     border-bottom-left-radius: 5px;
+}
+
+.message-time {
+    margin-top: 3px;
+
+    color: #64748b;
+    font-size: 10px;
 }
 
 /* =====================================================
@@ -704,6 +834,23 @@ button {
 .group-users {
     max-height: 250px;
     overflow-y: auto;
+}
+
+.group-user {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    padding: 8px 4px;
+
+    cursor: pointer;
+
+    color: #cbd5e1;
+    font-size: 14px;
+}
+
+.group-user input[type="checkbox"] {
+    accent-color: #2563eb;
 }
 
 .modal-buttons {
@@ -877,6 +1024,28 @@ button {
     background: #22314a;
 }
 
+.admin-user-item {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    gap: 2px;
+
+    border: 0;
+    background: transparent;
+    color: inherit;
+    text-align: left;
+}
+
+.admin-user-item strong {
+    color: #f8fafc;
+    font-size: 13px;
+}
+
+.admin-user-item span {
+    color: #718096;
+    font-size: 12px;
+}
+
 .admin-empty {
     padding: 25px;
 
@@ -923,6 +1092,24 @@ button {
     color: #94a3b8;
 }
 
+.admin-history-item {
+    padding: 10px 0;
+    border-bottom: 1px solid #1f2c40;
+}
+
+.admin-history-item strong {
+    display: block;
+    color: #f8fafc;
+    font-size: 13px;
+}
+
+.admin-history-item span {
+    display: block;
+    margin-top: 2px;
+    color: #718096;
+    font-size: 12px;
+}
+
 /* =====================================================
    SCROLLBAR
 ===================================================== */
@@ -960,7 +1147,7 @@ button {
         padding: 16px 12px;
     }
 
-    .message {
+    .message-wrapper {
         max-width: 80%;
     }
 
