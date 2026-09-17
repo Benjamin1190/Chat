@@ -3,107 +3,229 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>Chat</title>
+
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
 
+    <!-- PANTALLA DE AUTENTICACIÓN -->
+
     <div id="authScreen" class="auth-screen">
+
         <div class="auth-box">
+
             <div class="logo">💬</div>
+
             <h1>Chat</h1>
-            <p class="subtitle">Tu chat privado</p>
+
+            <p class="subtitle">
+                Tu chat privado
+            </p>
+
+
+            <!-- LOGIN -->
 
             <div id="loginForm">
-                <input id="loginEmail" type="email" placeholder="Correo electrónico" autocomplete="email">
-                <input id="loginPassword" type="password" placeholder="Contraseña" autocomplete="current-password">
 
-                <button id="loginButton" type="button">Iniciar sesión</button>
+                <input
+                    id="loginEmail"
+                    type="email"
+                    placeholder="Correo electrónico"
+                    autocomplete="email"
+                >
+
+                <input
+                    id="loginPassword"
+                    type="password"
+                    placeholder="Contraseña"
+                    autocomplete="current-password"
+                >
+
+                <button
+                    id="loginButton"
+                    type="button"
+                >
+                    Iniciar sesión
+                </button>
 
                 <p>
                     ¿No tienes cuenta?
-                    <button id="showRegister" class="link-button" type="button">
+
+                    <button
+                        id="showRegister"
+                        class="link-button"
+                        type="button"
+                    >
                         Registrarme
                     </button>
                 </p>
+
             </div>
 
-            <div id="registerForm" class="hidden">
-                <input id="registerEmail" type="email" placeholder="Correo electrónico" autocomplete="email">
 
-                <input id="registerUsername" type="text" placeholder="Nombre de usuario"
-                    autocomplete="username" maxlength="20">
+            <!-- REGISTRO -->
 
-                <input id="registerPassword" type="password" placeholder="Contraseña"
-                    autocomplete="new-password">
+            <div
+                id="registerForm"
+                class="hidden"
+            >
 
-                <button id="registerButton" type="button">Crear cuenta</button>
+                <input
+                    id="registerEmail"
+                    type="email"
+                    placeholder="Correo electrónico"
+                    autocomplete="email"
+                >
+
+                <input
+                    id="registerUsername"
+                    type="text"
+                    placeholder="Nombre de usuario"
+                    autocomplete="username"
+                    maxlength="20"
+                >
+
+                <input
+                    id="registerPassword"
+                    type="password"
+                    placeholder="Contraseña"
+                    autocomplete="new-password"
+                >
+
+                <button
+                    id="registerButton"
+                    type="button"
+                >
+                    Crear cuenta
+                </button>
 
                 <p>
                     ¿Ya tienes cuenta?
-                    <button id="showLogin" class="link-button" type="button">
+
+                    <button
+                        id="showLogin"
+                        class="link-button"
+                        type="button"
+                    >
                         Iniciar sesión
                     </button>
                 </p>
+
             </div>
 
+
             <div id="authMessage"></div>
+
         </div>
+
     </div>
 
-    <div id="app" class="app hidden">
+
+    <!-- APLICACIÓN -->
+
+    <div
+        id="app"
+        class="app hidden"
+    >
 
         <aside class="sidebar">
 
             <div class="sidebar-header">
+
                 <div>
+
                     <h2>Chat</h2>
+
                     <span id="currentUser"></span>
+
                 </div>
 
-                <button id="logoutButton" type="button" title="Cerrar sesión">
+                <button
+                    id="logoutButton"
+                    type="button"
+                    title="Cerrar sesión"
+                >
                     ↪
                 </button>
+
             </div>
 
+
             <div class="search">
+
                 <input
                     id="userSearch"
                     type="text"
                     placeholder="Buscar usuarios..."
-                    autocomplete="off">
+                    autocomplete="off"
+                >
+
             </div>
+
 
             <div id="searchResults"></div>
 
-            <div class="section-title">MIS CHATS</div>
+
+            <div class="section-title">
+                MIS CHATS
+            </div>
+
 
             <div id="chatList"></div>
 
         </aside>
 
+
         <main class="chat">
 
-            <div id="welcome" class="welcome">
-                <div class="welcome-icon">💬</div>
+            <div
+                id="welcome"
+                class="welcome"
+            >
 
-                <h2>Bienvenido a Chat</h2>
+                <div class="welcome-icon">
+                    💬
+                </div>
+
+                <h2>
+                    Bienvenido a Chat
+                </h2>
 
                 <p>
                     Selecciona un chat para empezar a hablar.
                 </p>
+
             </div>
 
-            <div id="chatWindow" class="chat-window hidden">
+
+            <div
+                id="chatWindow"
+                class="chat-window hidden"
+            >
 
                 <header class="chat-header">
+
                     <div>
-                        <div id="chatTitle">Chat</div>
+
+                        <div id="chatTitle">
+                            Chat
+                        </div>
+
                         <small id="chatStatus"></small>
+
                     </div>
+
                 </header>
 
-                <div id="messages" class="messages"></div>
+
+                <div
+                    id="messages"
+                    class="messages"
+                ></div>
+
 
                 <div class="message-area">
 
@@ -111,9 +233,13 @@
                         id="messageInput"
                         type="text"
                         placeholder="Escribe un mensaje..."
-                        autocomplete="off">
+                        autocomplete="off"
+                    >
 
-                    <button id="sendButton" type="button">
+                    <button
+                        id="sendButton"
+                        type="button"
+                    >
                         ➤
                     </button>
 
@@ -125,7 +251,13 @@
 
     </div>
 
-    <script type="module" src="app.js"></script>
+
+    <!-- FIREBASE -->
+
+    <script
+        type="module"
+        src="app.js"
+    ></script>
 
 </body>
 </html>
