@@ -3,22 +3,34 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <title>Chat</title>
+
   <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-  <!-- LOGIN / REGISTRO -->
+  <!-- =====================================================
+       AUTENTICACIÓN
+  ====================================================== -->
+
   <section id="authScreen" class="auth-screen">
 
-    <div class="auth-card">
+    <div class="auth-box">
 
-      <div class="logo">💬</div>
+      <div class="auth-logo">
+        💬
+      </div>
+
       <h1>Chat</h1>
-      <p class="auth-subtitle">Iniciá sesión para continuar</p>
 
-      <div id="authMessage" class="auth-message"></div>
+      <p class="auth-subtitle">
+        Tu chat privado y grupos
+      </p>
+
+
+      <!-- LOGIN -->
 
       <form id="loginForm">
 
@@ -38,13 +50,37 @@
           required
         >
 
-        <button id="loginButton" type="submit">
+        <button
+          id="loginButton"
+          type="submit"
+          class="primary-button"
+        >
           Iniciar sesión
+        </button>
+
+        <button
+          id="showRegister"
+          type="button"
+          class="secondary-button"
+        >
+          Crear cuenta
         </button>
 
       </form>
 
+
+      <!-- REGISTRO -->
+
       <form id="registerForm" class="hidden">
+
+        <input
+          id="registerUsername"
+          type="text"
+          placeholder="Nombre de usuario"
+          maxlength="30"
+          autocomplete="username"
+          required
+        >
 
         <input
           id="registerEmail"
@@ -55,78 +91,101 @@
         >
 
         <input
-          id="registerUsername"
-          type="text"
-          placeholder="Nombre de usuario"
-          maxlength="30"
-          required
-        >
-
-        <input
           id="registerPassword"
           type="password"
           placeholder="Contraseña"
-          minlength="6"
           autocomplete="new-password"
           required
         >
 
-        <button id="registerButton" type="submit">
+        <button
+          id="registerButton"
+          type="submit"
+          class="primary-button"
+        >
           Crear cuenta
+        </button>
+
+        <button
+          id="showLogin"
+          type="button"
+          class="secondary-button"
+        >
+          Ya tengo una cuenta
         </button>
 
       </form>
 
-      <button id="showRegister" class="secondary-button" type="button">
-        Crear una cuenta
-      </button>
 
-      <button id="showLogin" class="secondary-button hidden" type="button">
-        Ya tengo una cuenta
-      </button>
+      <div id="authMessage" class="auth-message"></div>
 
     </div>
 
   </section>
 
 
-  <!-- APLICACIÓN -->
-  <div id="app" class="app hidden">
+  <!-- =====================================================
+       APLICACIÓN
+  ====================================================== -->
+
+  <main id="app" class="app hidden">
 
     <!-- SIDEBAR -->
+
     <aside class="sidebar">
 
-      <div class="sidebar-header">
+      <header class="sidebar-header">
 
-        <div class="current-user-container">
-          <div class="user-avatar">👤</div>
+        <div class="profile">
+
+          <div class="avatar">
+            👤
+          </div>
 
           <div>
-            <strong id="currentUser">Usuario</strong>
-            <span>En línea</span>
+            <strong id="currentUser">
+              Usuario
+            </strong>
+
+            <span>
+              En línea
+            </span>
           </div>
+
         </div>
 
-        <div class="header-buttons">
+        <div class="sidebar-actions">
+
+          <button
+            id="createGroupButton"
+            title="Crear grupo"
+          >
+            👥
+          </button>
 
           <button
             id="adminButton"
-            class="admin-button hidden"
-            type="button"
+            class="hidden"
+            title="Administración"
           >
-            🛡️ Admin
+            ⚙️
           </button>
 
-          <button id="logoutButton" type="button">
-            Salir
+          <button
+            id="logoutButton"
+            title="Cerrar sesión"
+          >
+            🚪
           </button>
 
         </div>
 
-      </div>
+      </header>
 
 
-      <div class="sidebar-actions">
+      <!-- BUSCADOR -->
+
+      <div class="search-box">
 
         <input
           id="userSearch"
@@ -135,44 +194,54 @@
           autocomplete="off"
         >
 
-        <button
-          id="createGroupButton"
-          type="button"
-        >
-          ＋ Grupo
-        </button>
-
       </div>
 
 
-      <div id="searchResults" class="search-results"></div>
+      <div
+        id="searchResults"
+        class="search-results hidden"
+      ></div>
 
-      <div class="chat-list-title">
-        Conversaciones
-      </div>
 
-      <div id="chatList" class="chat-list"></div>
+      <!-- LISTA DE CHATS -->
+
+      <div
+        id="chatList"
+        class="chat-list"
+      ></div>
 
     </aside>
 
 
     <!-- CHAT -->
-    <main class="chat-area">
+
+    <section class="chat-area">
+
+      <!-- BIENVENIDA -->
 
       <div id="welcome" class="welcome">
 
-        <div class="welcome-icon">💬</div>
+        <div class="welcome-icon">
+          💬
+        </div>
 
         <h2>Bienvenido a Chat</h2>
 
         <p>
-          Seleccioná una conversación para empezar.
+          Seleccioná una conversación para comenzar.
         </p>
 
       </div>
 
 
-      <div id="chatWindow" class="chat-window hidden">
+      <!-- VENTANA DE CHAT -->
+
+      <div
+        id="chatWindow"
+        class="chat-window hidden"
+      >
+
+        <!-- HEADER -->
 
         <header class="chat-header">
 
@@ -182,44 +251,48 @@
               Chat
             </h2>
 
-            <span id="chatStatus">
-              En línea
-            </span>
+            <span id="chatStatus"></span>
 
           </div>
 
           <button
             id="deleteChatButton"
-            class="danger-button"
-            type="button"
+            title="Eliminar conversación"
           >
-            🗑️ Eliminar
+            🗑️
           </button>
 
         </header>
 
 
-        <div id="messages" class="messages"></div>
+        <!-- MENSAJES -->
+
+        <div
+          id="messages"
+          class="messages"
+        ></div>
 
 
-        <div class="message-composer">
+        <!-- ESCRIBIR -->
 
-          <div class="character-row">
-            <span id="characterCounter">0/1000</span>
-          </div>
+        <div class="message-area">
 
-          <div class="composer-row">
+          <textarea
+            id="messageInput"
+            maxlength="4000"
+            rows="1"
+            placeholder="Escribí un mensaje..."
+          ></textarea>
 
-            <textarea
-              id="messageInput"
-              maxlength="1000"
-              placeholder="Escribí un mensaje..."
-              rows="1"
-            ></textarea>
+          <div class="message-bottom">
+
+            <span id="characterCounter">
+              0/4000
+            </span>
 
             <button
               id="sendButton"
-              type="button"
+              class="send-button"
             >
               ➤
             </button>
@@ -230,28 +303,23 @@
 
       </div>
 
-    </main>
+    </section>
 
-  </div>
+  </main>
 
 
-  <!-- MODAL CREAR GRUPO -->
-  <div id="groupModal" class="modal hidden">
+  <!-- =====================================================
+       MODAL CREAR GRUPO
+  ====================================================== -->
 
-    <div class="modal-card">
+  <div
+    id="groupModal"
+    class="modal hidden"
+  >
 
-      <div class="modal-header">
+    <div class="modal-box">
 
-        <h2>Crear grupo</h2>
-
-        <button
-          id="cancelGroupButton"
-          type="button"
-        >
-          ×
-        </button>
-
-      </div>
+      <h2>Crear grupo</h2>
 
       <input
         id="groupName"
@@ -260,16 +328,17 @@
         placeholder="Nombre del grupo"
       >
 
-      <p class="modal-label">
-        Seleccioná los usuarios:
-      </p>
+      <h3>Agregar personas</h3>
 
-      <div id="groupUsers" class="group-users"></div>
+      <div
+        id="groupUsers"
+        class="group-users"
+      ></div>
 
-      <div class="modal-actions">
+      <div class="modal-buttons">
 
         <button
-          id="cancelGroupButtonBottom"
+          id="cancelGroupButton"
           class="secondary-button"
           type="button"
         >
@@ -278,6 +347,7 @@
 
         <button
           id="confirmGroupButton"
+          class="primary-button"
           type="button"
         >
           Crear grupo
@@ -290,26 +360,32 @@
   </div>
 
 
-  <!-- ADMIN -->
-  <div id="adminPanel" class="admin-panel hidden">
+  <!-- =====================================================
+       ADMIN
+  ====================================================== -->
 
-    <aside class="admin-sidebar">
+  <div
+    id="adminPanel"
+    class="admin-panel hidden"
+  >
 
-      <div class="admin-header">
+    <div class="admin-box">
+
+      <header class="admin-header">
 
         <div>
-          <strong>🛡️ Administración</strong>
-          <span id="adminUserCount">0 usuarios</span>
+          <h2>Administración</h2>
+
+          <span id="adminUserCount">
+            0 usuarios
+          </span>
         </div>
 
-        <button
-          id="adminCloseButton"
-          type="button"
-        >
-          ×
+        <button id="adminCloseButton">
+          ✕
         </button>
 
-      </div>
+      </header>
 
 
       <div class="admin-toolbar">
@@ -322,84 +398,89 @@
 
         <button
           id="adminSyncButton"
-          type="button"
         >
-          🔄
+          🔄 Sincronizar
         </button>
 
       </div>
 
 
-      <div id="adminSyncStatus" class="admin-sync-status"></div>
-
-      <div id="adminUsers" class="admin-users"></div>
-
-    </aside>
-
-
-    <section class="admin-main">
-
-      <div id="adminEmpty" class="admin-empty">
-
-        <div>👤</div>
-
-        <h2>Seleccioná un usuario</h2>
-
-        <p>
-          Acá vas a poder ver sus conversaciones e historial.
-        </p>
-
-      </div>
+      <div
+        id="adminSyncStatus"
+        class="admin-sync-status"
+      ></div>
 
 
-      <div id="adminDetails" class="hidden">
+      <div class="admin-content">
 
-        <div class="admin-details-header">
+        <div class="admin-users">
 
-          <div>
+          <div
+            id="adminUsers"
+            class="admin-user-list"
+          ></div>
+
+          <div
+            id="adminEmpty"
+            class="admin-empty hidden"
+          >
+            No se encontraron usuarios.
+          </div>
+
+        </div>
+
+
+        <div
+          id="adminDetails"
+          class="admin-details hidden"
+        >
+
+          <div class="admin-user-info">
 
             <h2 id="adminDetailName">
               Usuario
             </h2>
 
-            <p id="adminDetailEmail">
-              correo
+            <p>
+              <strong>Email:</strong>
+              <span id="adminDetailEmail"></span>
+            </p>
+
+            <p>
+              <strong>UID:</strong>
+              <span id="adminDetailUid"></span>
+            </p>
+
+            <p>
+              <strong>Creado:</strong>
+              <span id="adminDetailCreated"></span>
             </p>
 
           </div>
 
-        </div>
 
+          <h3>
+            Historial de conversaciones
+          </h3>
 
-        <div class="admin-info-grid">
-
-          <div>
-            <span>UID</span>
-            <strong id="adminDetailUid"></strong>
-          </div>
-
-          <div>
-            <span>Creado</span>
-            <strong id="adminDetailCreated"></strong>
-          </div>
+          <div
+            id="adminHistory"
+            class="admin-history"
+          ></div>
 
         </div>
-
-
-        <h3>
-          Historial
-        </h3>
-
-        <div id="adminHistory"></div>
 
       </div>
 
-    </section>
+    </div>
 
   </div>
 
 
-  <script type="module" src="app.js"></script>
+  <script
+    type="module"
+    src="app.js"
+  ></script>
 
 </body>
 </html>
