@@ -277,6 +277,20 @@
 
         <div class="message-area">
 
+          <div
+            id="imagePreview"
+            class="image-preview hidden"
+          >
+            <img id="imagePreviewThumb" alt="Vista previa">
+            <button
+              id="removeImageButton"
+              type="button"
+              title="Quitar imagen"
+            >
+              ✕
+            </button>
+          </div>
+
           <textarea
             id="messageInput"
             maxlength="4000"
@@ -284,7 +298,22 @@
             placeholder="Escribí un mensaje..."
           ></textarea>
 
+          <input
+            id="imageInput"
+            type="file"
+            accept="image/*"
+            class="hidden"
+          >
+
           <div class="message-bottom">
+
+            <button
+              id="attachButton"
+              type="button"
+              title="Enviar imagen"
+            >
+              🖼️
+            </button>
 
             <span id="characterCounter">
               0/4000
