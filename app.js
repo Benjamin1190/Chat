@@ -1,1310 +1,948 @@
-const SUPABASE_URL =
-    "https://snmgcfejfeqiheimoyna.supabase.co";
+const SUPABASE_URL = "https://snmgcfejfeqiheimoyna.supabase.co";
+const SUPABASE_KEY = "sb_publishable_J457xhtv1ST-TrStmuvnqQ_Fi6OTtN5";
 
-const SUPABASE_KEY =
-    "sb_publishable_J457xhtv1ST-TrStmuvnqQ_Fi6OTtN5";
+const { createClient } = supabase;
 
-const supabaseClient =
-    window.supabase.createClient(
-        SUPABASE_URL,
-        SUPABASE_KEY
-    );
-
+const db = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let currentUser = null;
+let currentProfile = null;
 let currentConversation = null;
 let realtimeChannel = null;
 
+// ================================
+// ELEMENTOS
+// ================================
 
-/* ELEMENTOS */
+const authScreen = document.getElementById("authScreen");
+const appScreen = document.getElementById("appScreen");
 
-const authScreen =
-    document.getElementById("authScreen");
+const loginForm = document.getElementById("loginForm");
+const registerForm = document.getElementById("registerForm");
 
-const app =
-    document.getElementById("app");
+const loginUsername = document.getElementById("loginUsername");
+const loginPassword = document.getElementById("loginPassword");
 
-const loginForm =
-    document.getElementById("loginForm");
+const registerUsername = document.getElementById("registerUsername");
+const registerPassword = document.getElementById("registerPassword");
 
-const registerForm =
-    document.getElementById("registerForm");
+const loginMessage = document.getElementById("loginMessage");
+const registerMessage = document.getElementById("registerMessage");
 
-const loginUsername =
-    document.getElementById("loginUsername");
+const searchInput = document.getElementById("searchInput");
+const userResults = document.getElementById("userResults");
 
-const loginPassword =
-    document.getElementById("loginPassword");
+const chatList = document.getElementById("chatList");
 
-const registerUsername =
-    document.getElementById("registerUsername");
+const chatTitle = document.getElementById("chatTitle");
+const messages = document.getElementById("messages");
 
-const registerPassword =
-    document.getElementById("registerPassword");
+const messageInput = document.getElementById("messageInput");
+const sendButton = document.getElementById("sendButton");
 
-const authMessage =
-    document.getElementById("authMessage");
+const imageInput = document.getElementById("imageInput");
+const imageButton = document.getElementById("imageButton");
 
-const currentUserElement =
-    document.getElementById("currentUser");
+const logoutButton = document.getElementById("logoutButton");
 
-const chatList =
-    document.getElementById("chatList");
-
-const userSearch =
-    document.getElementById("userSearch");
-
-const searchResults =
-    document.getElementById("searchResults");
-
-const welcome =
-    document.getElementById("welcome");
-
-const chatWindow =
-    document.getElementById("chatWindow");
-
-const chatTitle =
-    document.getElementById("chatTitle");
-
-const messages =
-    document.getElementById("messages");
-
-const messageInput =
-    document.getElementById("messageInput");
-
-const sendButton =
-    document.getElementById("sendButton");
-
-const imageButton =
-    document.getElementById("imageButton");
-
-const imageInput =
-    document.getElementById("imageInput");
-
-const logoutButton =
-    document.getElementById("logoutButton");
-
-
-/* EMAIL INTERNO */
+// ================================
+// EMAIL INTERNO
+// ================================
 
 function makeInternalEmail(username) {
-
-    return username
-        .trim()
-        .toLowerCase() +
-        "@chat.local";
-
+    return username.trim().toLowerCase() + "@example.com";
 }
 
+// ================================
+// UTILIDADES
+// ================================
 
-/* CAMBIAR LOGIN / REGISTRO */
+function escapeHTML(text) {
+    const div = document.createElement("div");
+    div.textContent = text;
+    return div.innerHTML;
+}
 
-document.getElementById("showRegister").onclick = () => {
+function showAuth() {
+    authScreen.classList.remove("hidden");
+    appScreen.classList.add("hidden");
+}
 
-    loginForm.classList.add("hidden");
+function showApp() {
+    authScreen.classList.add("hidden");
+    appScreen.classList.remove("hidden");
+}
 
-    registerForm.classList.remove("hidden");
+function setMessage(element, text, error = false) {
+    if (!element) return;
 
-    authMessage.textContent = "";
+    element.textContent = text;
+    element.style.color = error ? "#ff5c5c" : "#25d366";
+}
 
-};
+function validateUsername(username) {
+    return /^[a-zA-Z0-9_]{3,20}$/.test(username);
+}
 
+// ================================
+// REGISTRO
+// ================================
 
-document.getElementById("showLogin").onclick = () => {
+registerForm?.addEventListener("submit", async (event) => {
+    event.preventDefault();
 
-    registerForm.classList.add("hidden");
+    const username = registerUsername.value.trim().toLowerCase();
+    const password = registerPassword.value;
 
-    loginForm.classList.remove("hidden");
+    setMessage(registerMessage, "");
 
-    authMessage.textContent = "";
-
-};
-
-
-/* REGISTRO */
-
-document.getElementById("registerButton").onclick =
-async () => {
-
-    const username =
-        registerUsername.value
-            .trim()
-            .toLowerCase();
-
-    const password =
-        registerPassword.value;
-
-
-    if (!username || !password) {
-
-        authMessage.textContent =
-            "Completa todos los campos.";
-
+    if (!validateUsername(username)) {
+        setMessage(
+            registerMessage,
+            "El usuario debe tener entre 3 y 20 caracteres y solo usar letras, números o _.",
+            true
+        );
         return;
-
     }
-
-
-    if (!/^[a-z0-9_]{3,20}$/.test(username)) {
-
-        authMessage.textContent =
-            "El usuario debe tener 3-20 caracteres y solo puede usar letras, números y _.";
-
-        return;
-
-    }
-
 
     if (password.length < 6) {
-
-        authMessage.textContent =
-            "La contraseña debe tener al menos 6 caracteres.";
-
+        setMessage(
+            registerMessage,
+            "La contraseña debe tener al menos 6 caracteres.",
+            true
+        );
         return;
-
     }
 
+    try {
+        // Comprobar si el nombre ya existe
+        const { data: existingProfile, error: profileError } = await db
+            .from("profiles")
+            .select("id")
+            .eq("username", username)
+            .maybeSingle();
 
-    authMessage.textContent =
-        "Creando cuenta...";
+        if (profileError) {
+            console.error(profileError);
 
+            setMessage(
+                registerMessage,
+                "Error comprobando el usuario.",
+                true
+            );
 
-    const internalEmail =
-        makeInternalEmail(username);
-
-
-    const {
-        data,
-        error
-    } = await supabaseClient.auth.signUp({
-
-        email: internalEmail,
-
-        password: password
-
-    });
-
-
-    if (error) {
-
-        if (
-            error.message
-                .toLowerCase()
-                .includes("already registered")
-        ) {
-
-            authMessage.textContent =
-                "Ese nombre de usuario ya está registrado.";
-
-        } else {
-
-            authMessage.textContent =
-                error.message;
-
+            return;
         }
 
-        return;
+        if (existingProfile) {
+            setMessage(
+                registerMessage,
+                "Ese nombre de usuario ya existe.",
+                true
+            );
 
-    }
+            return;
+        }
 
+        const email = makeInternalEmail(username);
 
-    if (!data.user) {
-
-        authMessage.textContent =
-            "No se pudo crear el usuario.";
-
-        return;
-
-    }
-
-
-    const {
-        error: profileError
-    } = await supabaseClient
-        .from("profiles")
-        .insert({
-
-            id: data.user.id,
-
-            username: username
-
+        const { data, error } = await db.auth.signUp({
+            email: email,
+            password: password
         });
 
+        if (error) {
+            console.error(error);
 
-    if (profileError) {
+            setMessage(
+                registerMessage,
+                error.message,
+                true
+            );
 
-        authMessage.textContent =
-            profileError.message;
+            return;
+        }
+
+        if (!data.user) {
+            setMessage(
+                registerMessage,
+                "No se pudo crear la cuenta.",
+                true
+            );
+
+            return;
+        }
+
+        // Crear perfil
+        const { error: profileInsertError } = await db
+            .from("profiles")
+            .insert({
+                id: data.user.id,
+                username: username
+            });
+
+        if (profileInsertError) {
+            console.error(profileInsertError);
+
+            setMessage(
+                registerMessage,
+                "La cuenta se creó, pero no se pudo crear el perfil.",
+                true
+            );
+
+            return;
+        }
+
+        if (!data.session) {
+            setMessage(
+                registerMessage,
+                "Cuenta creada. Si no entra automáticamente, desactiva Confirm email en Supabase.",
+                true
+            );
+
+            return;
+        }
+
+        currentUser = data.user;
+
+        await loadCurrentProfile();
+
+        showApp();
+
+        await loadChats();
+
+    } catch (error) {
+        console.error(error);
+
+        setMessage(
+            registerMessage,
+            "Ocurrió un error inesperado.",
+            true
+        );
+    }
+});
+
+// ================================
+// LOGIN
+// ================================
+
+loginForm?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    const username = loginUsername.value.trim().toLowerCase();
+    const password = loginPassword.value;
+
+    setMessage(loginMessage, "");
+
+    if (!validateUsername(username)) {
+        setMessage(
+            loginMessage,
+            "Usuario inválido.",
+            true
+        );
 
         return;
-
     }
 
+    try {
+        const email = makeInternalEmail(username);
 
-    currentUser =
-        data.user;
+        const { data, error } = await db.auth.signInWithPassword({
+            email: email,
+            password: password
+        });
 
+        if (error) {
+            console.error(error);
 
-    await startApp();
+            setMessage(
+                loginMessage,
+                "Usuario o contraseña incorrectos.",
+                true
+            );
 
-};
+            return;
+        }
 
+        currentUser = data.user;
 
-/* LOGIN */
+        await loadCurrentProfile();
 
-document.getElementById("loginButton").onclick =
-async () => {
+        showApp();
 
-    const username =
-        loginUsername.value
-            .trim()
-            .toLowerCase();
+        await loadChats();
 
-    const password =
-        loginPassword.value;
+    } catch (error) {
+        console.error(error);
 
-
-    if (!username || !password) {
-
-        authMessage.textContent =
-            "Completa todos los campos.";
-
-        return;
-
+        setMessage(
+            loginMessage,
+            "Ocurrió un error inesperado.",
+            true
+        );
     }
+});
 
+// ================================
+// CARGAR PERFIL
+// ================================
 
-    authMessage.textContent =
-        "Iniciando sesión...";
+async function loadCurrentProfile() {
+    if (!currentUser) return;
 
-
-    const internalEmail =
-        makeInternalEmail(username);
-
-
-    const {
-        data,
-        error
-    } = await supabaseClient.auth.signInWithPassword({
-
-        email: internalEmail,
-
-        password: password
-
-    });
-
-
-    if (error) {
-
-        authMessage.textContent =
-            "Usuario o contraseña incorrectos.";
-
-        return;
-
-    }
-
-
-    currentUser =
-        data.user;
-
-
-    await startApp();
-
-};
-
-
-/* SESIÓN EXISTENTE */
-
-async function checkSession() {
-
-    const {
-        data
-    } = await supabaseClient.auth.getSession();
-
-
-    if (data.session) {
-
-        currentUser =
-            data.session.user;
-
-        await startApp();
-
-    } else {
-
-        showLogin();
-
-    }
-
-}
-
-
-/* MOSTRAR LOGIN */
-
-function showLogin() {
-
-    authScreen.classList.remove("hidden");
-
-    app.classList.add("hidden");
-
-}
-
-
-/* INICIAR APP */
-
-async function startApp() {
-
-    authScreen.classList.add("hidden");
-
-    app.classList.remove("hidden");
-
-
-    const {
-        data
-    } = await supabaseClient
+    const { data, error } = await db
         .from("profiles")
-        .select("username")
+        .select("*")
         .eq("id", currentUser.id)
         .single();
 
-
-    if (data) {
-
-        currentUserElement.textContent =
-            "@" + data.username;
-
+    if (error) {
+        console.error("Error cargando perfil:", error);
+        return;
     }
 
-
-    await loadChats();
-
+    currentProfile = data;
 }
 
+// ================================
+// CERRAR SESIÓN
+// ================================
 
-/* LOGOUT */
-
-logoutButton.onclick =
-async () => {
-
-    await supabaseClient.auth.signOut();
+logoutButton?.addEventListener("click", async () => {
+    await db.auth.signOut();
 
     currentUser = null;
-
+    currentProfile = null;
     currentConversation = null;
 
-    showLogin();
-
-};
-
-
-/* BUSCAR USUARIOS */
-
-let searchTimer;
-
-
-userSearch.addEventListener(
-    "input",
-    () => {
-
-        clearTimeout(searchTimer);
-
-        searchTimer =
-            setTimeout(
-                searchUsers,
-                300
-            );
-
+    if (realtimeChannel) {
+        await db.removeChannel(realtimeChannel);
+        realtimeChannel = null;
     }
-);
 
+    showAuth();
 
-async function searchUsers() {
+    loginPassword.value = "";
+});
 
-    const text =
-        userSearch.value.trim();
+// ================================
+// BUSCAR USUARIOS
+// ================================
 
+searchInput?.addEventListener("input", async () => {
+    const search = searchInput.value.trim().toLowerCase();
 
-    searchResults.innerHTML = "";
+    userResults.innerHTML = "";
 
+    if (!search) {
+        userResults.classList.add("hidden");
+        return;
+    }
 
-    if (!text) return;
-
-
-    const {
-        data,
-        error
-    } = await supabaseClient
+    const { data, error } = await db
         .from("profiles")
-        .select("id, username")
-        .ilike(
-            "username",
-            `%${text}%`
-        )
-        .neq(
-            "id",
-            currentUser.id
-        )
-        .limit(10);
-
+        .select("id, username, avatar_url")
+        .ilike("username", `%${search}%`)
+        .neq("id", currentUser.id)
+        .limit(20);
 
     if (error) {
-
         console.error(error);
-
         return;
-
     }
 
-
-    data.forEach(user => {
-
-        const element =
-            document.createElement("div");
-
-
-        element.className =
-            "search-user";
-
-
-        element.innerHTML = `
-
-            <div class="avatar">
-                ${escapeHtml(
-                    user.username[0]
-                        .toUpperCase()
-                )}
+    if (!data || data.length === 0) {
+        userResults.innerHTML = `
+            <div class="empty">
+                No se encontraron usuarios
             </div>
-
-            <div>
-
-                <div class="user-name">
-                    ${escapeHtml(
-                        user.username
-                    )}
-                </div>
-
-                <div class="user-subtitle">
-                    Crear chat
-                </div>
-
-            </div>
-
         `;
 
+        userResults.classList.remove("hidden");
 
-        element.onclick =
-            () => createPrivateChat(user);
+        return;
+    }
 
+    data.forEach(user => {
+        const item = document.createElement("div");
 
-        searchResults.appendChild(
-            element
-        );
+        item.className = "user-result";
 
+        item.innerHTML = `
+            <div class="avatar">
+                ${escapeHTML(user.username.charAt(0).toUpperCase())}
+            </div>
+
+            <div class="user-result-name">
+                ${escapeHTML(user.username)}
+            </div>
+        `;
+
+        item.addEventListener("click", () => {
+            createPrivateConversation(user.id, user.username);
+        });
+
+        userResults.appendChild(item);
     });
 
-}
+    userResults.classList.remove("hidden");
+});
 
+// ================================
+// CREAR CHAT PRIVADO
+// ================================
 
-/* CREAR CHAT PRIVADO */
+async function createPrivateConversation(otherUserId, otherUsername) {
+    try {
+        userResults.classList.add("hidden");
+        searchInput.value = "";
 
-async function createPrivateChat(user) {
-
-    const {
-        data: myMemberships,
-        error
-    } = await supabaseClient
-        .from("conversation_members")
-        .select("conversation_id")
-        .eq(
-            "user_id",
-            currentUser.id
-        );
-
-
-    if (error) {
-
-        alert(error.message);
-
-        return;
-
-    }
-
-
-    const ids =
-        myMemberships.map(
-            x => x.conversation_id
-        );
-
-
-    if (ids.length) {
-
-        const {
-            data: possibleChats
-        } = await supabaseClient
+        // Buscar conversaciones del usuario actual
+        const { data: myMemberships, error: membershipsError } = await db
             .from("conversation_members")
-            .select(
-                "conversation_id, user_id"
-            )
-            .in(
-                "conversation_id",
-                ids
-            )
-            .eq(
-                "user_id",
-                user.id
-            );
+            .select("conversation_id")
+            .eq("user_id", currentUser.id);
 
-
-        if (possibleChats?.length) {
-
-            const conversationId =
-                possibleChats[0]
-                    .conversation_id;
-
-
-            await openConversation(
-                conversationId,
-                user.username
-            );
-
-
-            userSearch.value = "";
-
-            searchResults.innerHTML = "";
-
+        if (membershipsError) {
+            console.error(membershipsError);
+            alert("No se pudieron cargar las conversaciones.");
             return;
-
         }
 
-    }
+        const conversationIds =
+            myMemberships?.map(item => item.conversation_id) || [];
 
+        if (conversationIds.length > 0) {
+            const { data: existingMembers, error } = await db
+                .from("conversation_members")
+                .select("conversation_id, user_id")
+                .in("conversation_id", conversationIds);
 
-    const {
-        data: conversation,
-        error: conversationError
-    } = await supabaseClient
-        .from("conversations")
-        .insert({
+            if (!error && existingMembers) {
+                const grouped = {};
 
-            is_group: false,
+                existingMembers.forEach(member => {
+                    if (!grouped[member.conversation_id]) {
+                        grouped[member.conversation_id] = [];
+                    }
 
-            created_by:
-                currentUser.id
+                    grouped[member.conversation_id].push(member.user_id);
+                });
 
-        })
-        .select()
-        .single();
+                for (const conversationId of conversationIds) {
+                    const members = grouped[conversationId] || [];
 
+                    if (
+                        members.length === 2 &&
+                        members.includes(currentUser.id) &&
+                        members.includes(otherUserId)
+                    ) {
+                        await openConversation(
+                            conversationId,
+                            otherUsername
+                        );
 
-    if (conversationError) {
+                        await loadChats();
 
-        alert(
-            conversationError.message
-        );
-
-        return;
-
-    }
-
-
-    const {
-        error: memberError
-    } = await supabaseClient
-        .from("conversation_members")
-        .insert([
-
-            {
-                conversation_id:
-                    conversation.id,
-
-                user_id:
-                    currentUser.id
-            },
-
-            {
-                conversation_id:
-                    conversation.id,
-
-                user_id:
-                    user.id
+                        return;
+                    }
+                }
             }
+        }
 
-        ]);
+        // Crear conversación
+        const { data: conversation, error: conversationError } = await db
+            .from("conversations")
+            .insert({
+                name: null,
+                is_group: false,
+                created_by: currentUser.id
+            })
+            .select()
+            .single();
 
+        if (conversationError) {
+            console.error(conversationError);
 
-    if (memberError) {
+            alert("No se pudo crear el chat.");
 
-        alert(
-            memberError.message
+            return;
+        }
+
+        // Añadir los dos miembros
+        const { error: membersError } = await db
+            .from("conversation_members")
+            .insert([
+                {
+                    conversation_id: conversation.id,
+                    user_id: currentUser.id
+                },
+                {
+                    conversation_id: conversation.id,
+                    user_id: otherUserId
+                }
+            ]);
+
+        if (membersError) {
+            console.error(membersError);
+
+            alert("No se pudieron añadir los usuarios al chat.");
+
+            return;
+        }
+
+        await loadChats();
+
+        await openConversation(
+            conversation.id,
+            otherUsername
         );
 
-        return;
-
+    } catch (error) {
+        console.error(error);
+        alert("Ocurrió un error creando el chat.");
     }
-
-
-    await openConversation(
-        conversation.id,
-        user.username
-    );
-
-
-    userSearch.value = "";
-
-    searchResults.innerHTML = "";
-
-
-    await loadChats();
-
 }
 
-
-/* CARGAR CHATS */
+// ================================
+// CARGAR CHATS
+// ================================
 
 async function loadChats() {
+    if (!currentUser) return;
 
     chatList.innerHTML = "";
 
-
-    const {
-        data: memberships,
-        error
-    } = await supabaseClient
+    const { data: memberships, error } = await db
         .from("conversation_members")
         .select("conversation_id")
-        .eq(
-            "user_id",
-            currentUser.id
-        );
-
+        .eq("user_id", currentUser.id);
 
     if (error) {
-
-        console.error(error);
-
+        console.error("Error cargando membresías:", error);
         return;
-
     }
 
-
-    for (
-        const membership of memberships
-    ) {
-
-        const conversationId =
-            membership.conversation_id;
-
-
-        const {
-            data: conversation
-        } = await supabaseClient
-            .from("conversations")
-            .select("*")
-            .eq(
-                "id",
-                conversationId
-            )
-            .single();
-
-
-        if (!conversation) continue;
-
-
-        let title = "Grupo";
-
-
-        if (!conversation.is_group) {
-
-            const {
-                data: otherMembers
-            } = await supabaseClient
-                .from("conversation_members")
-                .select("user_id")
-                .eq(
-                    "conversation_id",
-                    conversationId
-                )
-                .neq(
-                    "user_id",
-                    currentUser.id
-                );
-
-
-            if (otherMembers?.length) {
-
-                const {
-                    data: profile
-                } = await supabaseClient
-                    .from("profiles")
-                    .select("username")
-                    .eq(
-                        "id",
-                        otherMembers[0]
-                            .user_id
-                    )
-                    .single();
-
-
-                if (profile) {
-
-                    title =
-                        profile.username;
-
-                }
-
-            }
-
-        } else {
-
-            title =
-                conversation.name ||
-                "Grupo";
-
-        }
-
-
-        const item =
-            document.createElement("div");
-
-
-        item.className =
-            "chat-item";
-
-
-        item.innerHTML = `
-
-            <div class="avatar">
-                ${escapeHtml(
-                    title[0]
-                        .toUpperCase()
-                )}
+    if (!memberships || memberships.length === 0) {
+        chatList.innerHTML = `
+            <div class="empty">
+                No tienes chats todavía.<br>
+                Busca un usuario para empezar.
             </div>
-
-            <div>
-
-                <div class="user-name">
-                    ${escapeHtml(title)}
-                </div>
-
-                <div class="user-subtitle">
-                    Abrir conversación
-                </div>
-
-            </div>
-
         `;
 
-
-        item.onclick =
-            () => openConversation(
-                conversationId,
-                title
-            );
-
-
-        chatList.appendChild(item);
-
+        return;
     }
 
+    for (const membership of memberships) {
+        const conversationId = membership.conversation_id;
+
+        const { data: members, error: membersError } = await db
+            .from("conversation_members")
+            .select("user_id")
+            .eq("conversation_id", conversationId);
+
+        if (membersError) {
+            console.error(membersError);
+            continue;
+        }
+
+        if (!members) continue;
+
+        const otherMember = members.find(
+            member => member.user_id !== currentUser.id
+        );
+
+        if (!otherMember) continue;
+
+        const { data: profile, error: profileError } = await db
+            .from("profiles")
+            .select("username, avatar_url")
+            .eq("id", otherMember.user_id)
+            .single();
+
+        if (profileError || !profile) continue;
+
+        const item = document.createElement("div");
+
+        item.className = "chat-item";
+
+        item.innerHTML = `
+            <div class="avatar">
+                ${escapeHTML(profile.username.charAt(0).toUpperCase())}
+            </div>
+
+            <div class="chat-item-info">
+                <div class="chat-item-name">
+                    ${escapeHTML(profile.username)}
+                </div>
+
+                <div class="chat-item-preview">
+                    Chat privado
+                </div>
+            </div>
+        `;
+
+        item.addEventListener("click", () => {
+            openConversation(
+                conversationId,
+                profile.username
+            );
+        });
+
+        chatList.appendChild(item);
+    }
 }
 
+// ================================
+// ABRIR CONVERSACIÓN
+// ================================
 
-/* ABRIR CHAT */
+async function openConversation(conversationId, username) {
+    currentConversation = conversationId;
 
-async function openConversation(
-    conversationId,
-    title
-) {
-
-    currentConversation =
-        conversationId;
-
-
-    welcome.classList.add(
-        "hidden"
-    );
-
-
-    chatWindow.classList.remove(
-        "hidden"
-    );
-
-
-    chatTitle.textContent =
-        title;
-
+    chatTitle.textContent = username;
 
     messages.innerHTML = "";
-
 
     await loadMessages();
 
-
-    subscribeMessages();
-
-
-    messageInput.focus();
-
+    subscribeToMessages();
 }
 
-
-/* CARGAR MENSAJES */
+// ================================
+// CARGAR MENSAJES
+// ================================
 
 async function loadMessages() {
+    if (!currentConversation) return;
 
-    const {
-        data,
-        error
-    } = await supabaseClient
+    const { data, error } = await db
         .from("messages")
         .select("*")
-        .eq(
-            "conversation_id",
-            currentConversation
-        )
-        .order(
-            "created_at",
-            {
-                ascending: true
-            }
-        );
-
+        .eq("conversation_id", currentConversation)
+        .order("created_at", {
+            ascending: true
+        });
 
     if (error) {
-
-        console.error(error);
+        console.error("Error cargando mensajes:", error);
 
         return;
-
     }
-
 
     messages.innerHTML = "";
 
+    if (!data || data.length === 0) {
+        messages.innerHTML = `
+            <div class="empty">
+                No hay mensajes todavía.
+            </div>
+        `;
 
-    for (const message of data) {
-
-        await renderMessage(
-            message
-        );
-
+        return;
     }
 
+    data.forEach(message => {
+        renderMessage(message);
+    });
 
     scrollMessages();
-
 }
 
+// ================================
+// MOSTRAR MENSAJE
+// ================================
 
-/* MOSTRAR MENSAJE */
+function renderMessage(message) {
+    const empty = messages.querySelector(".empty");
 
-async function renderMessage(message) {
-
-    const element =
-        document.createElement("div");
-
-
-    element.className =
-        "message";
-
-
-    if (
-        message.sender_id ===
-        currentUser.id
-    ) {
-
-        element.classList.add(
-            "mine"
-        );
-
+    if (empty) {
+        empty.remove();
     }
 
+    const element = document.createElement("div");
+
+    element.className =
+        "message " +
+        (message.sender_id === currentUser.id ? "mine" : "");
 
     let content = "";
 
-
     if (message.content) {
-
-        content +=
-            `<div>${escapeHtml(
-                message.content
-            )}</div>`;
-
+        content += `
+            <div class="message-text">
+                ${escapeHTML(message.content)}
+            </div>
+        `;
     }
-
 
     if (message.image_path) {
-
-        const {
-            data
-        } = await supabaseClient
-            .storage
+        const imageUrl = db.storage
             .from("chat-images")
-            .createSignedUrl(
-                message.image_path,
-                3600
-            );
+            .getPublicUrl(message.image_path);
 
-
-        if (data?.signedUrl) {
-
-            content += `
-
-                <img
-                    src="${data.signedUrl}"
-                    alt="Imagen enviada"
-                >
-
-            `;
-
-        }
-
+        content += `
+            <img
+                class="message-image"
+                src="${imageUrl.data.publicUrl}"
+                alt="Imagen"
+            >
+        `;
     }
 
+    const date = new Date(message.created_at);
 
-    const date =
-        new Date(
-            message.created_at
-        );
-
-
-    const time =
-        date.toLocaleTimeString(
-            "es-UY",
-            {
-                hour: "2-digit",
-                minute: "2-digit"
-            }
-        );
-
+    const time = date.toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit"
+    });
 
     content += `
-
         <div class="message-time">
             ${time}
         </div>
-
     `;
 
+    element.innerHTML = content;
 
-    element.innerHTML =
-        content;
-
-
-    messages.appendChild(
-        element
-    );
-
+    messages.appendChild(element);
 }
 
+// ================================
+// SCROLL
+// ================================
 
-/* ENVIAR MENSAJE */
+function scrollMessages() {
+    messages.scrollTop = messages.scrollHeight;
+}
+
+// ================================
+// ENVIAR MENSAJE
+// ================================
 
 async function sendMessage() {
-
-    const text =
-        messageInput.value.trim();
-
-
-    if (
-        !text ||
-        !currentConversation
-    ) {
-
+    if (!currentConversation) {
         return;
-
     }
 
+    const content = messageInput.value.trim();
+
+    if (!content) {
+        return;
+    }
+
+    sendButton.disabled = true;
+
+    const { error } = await db
+        .from("messages")
+        .insert({
+            conversation_id: currentConversation,
+            sender_id: currentUser.id,
+            content: content,
+            image_path: null
+        });
+
+    sendButton.disabled = false;
+
+    if (error) {
+        console.error("Error enviando mensaje:", error);
+
+        alert("No se pudo enviar el mensaje.");
+
+        return;
+    }
 
     messageInput.value = "";
 
-
-    const {
-        error
-    } = await supabaseClient
-        .from("messages")
-        .insert({
-
-            conversation_id:
-                currentConversation,
-
-            sender_id:
-                currentUser.id,
-
-            content:
-                text
-
-        });
-
-
-    if (error) {
-
-        console.error(error);
-
-        alert(error.message);
-
-        messageInput.value =
-            text;
-
-    }
-
+    messageInput.focus();
 }
 
+sendButton?.addEventListener("click", sendMessage);
 
-sendButton.onclick =
-    sendMessage;
+messageInput?.addEventListener("keydown", event => {
+    if (event.key === "Enter" && !event.shiftKey) {
+        event.preventDefault();
 
+        sendMessage();
+    }
+});
 
-messageInput.addEventListener(
-    "keydown",
-    event => {
+// ================================
+// SUBIR IMAGEN
+// ================================
 
-        if (event.key === "Enter") {
+imageButton?.addEventListener("click", () => {
+    imageInput.click();
+});
 
-            event.preventDefault();
+imageInput?.addEventListener("change", async () => {
+    const file = imageInput.files[0];
 
-            sendMessage();
+    if (!file) {
+        return;
+    }
 
+    if (!currentConversation) {
+        alert("Primero abre un chat.");
+
+        imageInput.value = "";
+
+        return;
+    }
+
+    if (!file.type.startsWith("image/")) {
+        alert("Selecciona una imagen.");
+
+        imageInput.value = "";
+
+        return;
+    }
+
+    try {
+        const extension =
+            file.name.split(".").pop().toLowerCase();
+
+        const filename =
+            `${crypto.randomUUID()}.${extension}`;
+
+        const path =
+            `${currentConversation}/${filename}`;
+
+        const { error: uploadError } = await db
+            .storage
+            .from("chat-images")
+            .upload(path, file);
+
+        if (uploadError) {
+            console.error(uploadError);
+
+            alert("No se pudo subir la imagen.");
+
+            return;
         }
 
-    }
-);
+        const { error: messageError } = await db
+            .from("messages")
+            .insert({
+                conversation_id: currentConversation,
+                sender_id: currentUser.id,
+                content: null,
+                image_path: path
+            });
 
+        if (messageError) {
+            console.error(messageError);
 
-/* IMÁGENES */
+            alert("La imagen se subió, pero no se pudo enviar.");
 
-imageButton.onclick =
-    () => imageInput.click();
+            return;
+        }
 
-
-imageInput.onchange =
-async () => {
-
-    const file =
-        imageInput.files[0];
-
-
-    if (
-        !file ||
-        !currentConversation
-    ) {
-
-        return;
-
-    }
-
-
-    if (
-        !file.type.startsWith(
-            "image/"
-        )
-    ) {
-
-        alert(
-            "Solo puedes enviar imágenes."
-        );
-
-        return;
-
-    }
-
-
-    if (
-        file.size >
-        5 * 1024 * 1024
-    ) {
-
-        alert(
-            "La imagen no puede superar 5 MB."
-        );
-
-        return;
-
-    }
-
-
-    const extension =
-        file.name
-            .split(".")
-            .pop();
-
-
-    const path =
-        `${currentConversation}/${crypto.randomUUID()}.${extension}`;
-
-
-    const {
-        error: uploadError
-    } = await supabaseClient
-        .storage
-        .from("chat-images")
-        .upload(
-            path,
-            file
-        );
-
-
-    if (uploadError) {
-
-        console.error(
-            uploadError
-        );
-
-        alert(
-            uploadError.message
-        );
-
-        return;
-
-    }
-
-
-    const {
-        error
-    } = await supabaseClient
-        .from("messages")
-        .insert({
-
-            conversation_id:
-                currentConversation,
-
-            sender_id:
-                currentUser.id,
-
-            image_path:
-                path
-
-        });
-
-
-    if (error) {
-
+    } catch (error) {
         console.error(error);
 
-        alert(error.message);
+        alert("Ocurrió un error subiendo la imagen.");
 
+    } finally {
+        imageInput.value = "";
     }
+});
 
+// ================================
+// REALTIME
+// ================================
 
-    imageInput.value = "";
-
-};
-
-
-/* TIEMPO REAL */
-
-function subscribeMessages() {
-
+function subscribeToMessages() {
     if (realtimeChannel) {
-
-        supabaseClient.removeChannel(
-            realtimeChannel
-        );
-
+        db.removeChannel(realtimeChannel);
+        realtimeChannel = null;
     }
 
+    if (!currentConversation) {
+        return;
+    }
 
-    realtimeChannel =
-        supabaseClient
-            .channel(
-                "messages-" +
-                currentConversation
-            )
-            .on(
-                "postgres_changes",
-                {
-                    event: "INSERT",
-                    schema: "public",
-                    table: "messages",
-                    filter:
-                        `conversation_id=eq.${currentConversation}`
-                },
-                async payload => {
+    realtimeChannel = db
+        .channel(
+            `messages-${currentConversation}`
+        )
+        .on(
+            "postgres_changes",
+            {
+                event: "INSERT",
+                schema: "public",
+                table: "messages",
+                filter:
+                    `conversation_id=eq.${currentConversation}`
+            },
+            payload => {
+                const existing = document.querySelector(
+                    `[data-message-id="${payload.new.id}"]`
+                );
 
-                    await renderMessage(
-                        payload.new
-                    );
-
+                if (!existing) {
+                    renderMessage(payload.new);
                     scrollMessages();
-
                 }
-            )
-            .subscribe();
-
+            }
+        )
+        .subscribe();
 }
 
+// ================================
+// SESIÓN AL CARGAR LA PÁGINA
+// ================================
 
-/* SCROLL */
+async function checkSession() {
+    const { data, error } = await db.auth.getSession();
 
-function scrollMessages() {
+    if (error) {
+        console.error(error);
 
-    messages.scrollTop =
-        messages.scrollHeight;
+        showAuth();
 
-}
-
-
-/* PROTEGER HTML */
-
-function escapeHtml(value) {
-
-    return String(value)
-        .replaceAll(
-            "&",
-            "&amp;"
-        )
-        .replaceAll(
-            "<",
-            "&lt;"
-        )
-        .replaceAll(
-            ">",
-            "&gt;"
-        )
-        .replaceAll(
-            '"',
-            "&quot;"
-        )
-        .replaceAll(
-            "'",
-            "&#039;"
-        );
-
-}
-
-
-/* AUTENTICACIÓN */
-
-supabaseClient.auth.onAuthStateChange(
-    async (
-        event,
-        session
-    ) => {
-
-        if (
-            session &&
-            !currentUser
-        ) {
-
-            currentUser =
-                session.user;
-
-            await startApp();
-
-        }
-
-
-        if (!session) {
-
-            currentUser = null;
-
-            showLogin();
-
-        }
-
+        return;
     }
-);
 
+    if (data.session?.user) {
+        currentUser = data.session.user;
 
-/* INICIAR */
+        await loadCurrentProfile();
+
+        showApp();
+
+        await loadChats();
+
+    } else {
+        showAuth();
+    }
+}
+
+// ================================
+// CAMBIOS DE AUTENTICACIÓN
+// ================================
+
+db.auth.onAuthStateChange(async (event, session) => {
+    if (session?.user) {
+        currentUser = session.user;
+
+        await loadCurrentProfile();
+
+        showApp();
+
+        await loadChats();
+
+    } else {
+        currentUser = null;
+        currentProfile = null;
+
+        showAuth();
+    }
+});
+
+// ================================
+// INICIAR
+// ================================
 
 checkSession();
