@@ -1,63 +1,52 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
 
 import {
-  getAuth,
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  signOut,
-  onAuthStateChanged
+    getAuth,
+    createUserWithEmailAndPassword,
+    signInWithEmailAndPassword,
+    onAuthStateChanged,
+    signOut
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
 
 import {
-  getFirestore,
-  collection,
-  doc,
-  setDoc,
-  addDoc,
-  getDoc,
-  getDocs,
-  updateDoc,
-  deleteDoc,
-  query,
-  where,
-  onSnapshot,
-  orderBy,
-  serverTimestamp,
-  writeBatch
+    getFirestore,
+    collection,
+    doc,
+    setDoc,
+    getDoc,
+    getDocs,
+    addDoc,
+    query,
+    where,
+    orderBy,
+    onSnapshot,
+    serverTimestamp
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
-import {
-  getFunctions,
-  httpsCallable
-} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-functions.js";
 
-
-/* =========================================================
+/* =========================
    FIREBASE
-========================================================= */
+========================= */
 
 const firebaseConfig = {
-  apiKey: "AIzaSyAQkoJ1NZ05MSHAkP2JXQlNkhg14uIulps",
-  authDomain: "chat-44405.firebaseapp.com",
-  projectId: "chat-44405",
-  storageBucket: "chat-44405.firebasestorage.app",
-  messagingSenderId: "239453189829",
-  appId: "1:239453189829:web:3fa427b9f8cacae74422ac",
-  measurementId: "G-TSJWY9EVS7"
+    apiKey: "AIzaSyAQkoJ1NZ05MSHAkP2JXQlNkhg14uIulps",
+    authDomain: "chat-44405.firebaseapp.com",
+    projectId: "chat-44405",
+    storageBucket: "chat-44405.firebasestorage.app",
+    messagingSenderId: "239453189829",
+    appId: "1:239453189829:web:3fa427b9f8cacae74422ac",
+    measurementId: "G-TSJWY9EVS7"
 };
 
 const firebaseApp = initializeApp(firebaseConfig);
 
 const auth = getAuth(firebaseApp);
 const db = getFirestore(firebaseApp);
-const functions = getFunctions(firebaseApp);
-
-const ADMIN_EMAIL = "minibenja2016@gmail.com";
 
 
-/* =========================================================
+/* =========================
    ELEMENTOS
-========================================================= */
+========================= */
 
 const authScreen = document.getElementById("authScreen");
 const app = document.getElementById("app");
@@ -75,2477 +64,1567 @@ const registerPassword = document.getElementById("registerPassword");
 const loginButton = document.getElementById("loginButton");
 const registerButton = document.getElementById("registerButton");
 
-const showRegister = document.getElementById("showRegister");
-const showLogin = document.getElementById("showLogin");
+const showRegisterButton =
+    document.getElementById("showRegister");
 
-const authMessage = document.getElementById("authMessage");
+const showLoginButton =
+    document.getElementById("showLogin");
 
-const currentUserElement = document.getElementById("currentUser");
-const logoutButton = document.getElementById("logoutButton");
+const authMessage =
+    document.getElementById("authMessage");
 
-const userSearch = document.getElementById("userSearch");
-const searchResults = document.getElementById("searchResults");
+const currentUserElement =
+    document.getElementById("currentUser");
 
-const createGroupButton = document.getElementById("createGroupButton");
-const chatList = document.getElementById("chatList");
+const logoutButton =
+    document.getElementById("logoutButton");
 
-const welcome = document.getElementById("welcome");
-const chatWindow = document.getElementById("chatWindow");
+const userSearch =
+    document.getElementById("userSearch");
 
-const chatTitle = document.getElementById("chatTitle");
-const chatStatus = document.getElementById("chatStatus");
+const searchResults =
+    document.getElementById("searchResults");
 
-const messagesElement = document.getElementById("messages");
-const messageInput = document.getElementById("messageInput");
-const characterCounter = document.getElementById("characterCounter");
-const sendButton = document.getElementById("sendButton");
+const chatList =
+    document.getElementById("chatList");
 
-const deleteChatButton = document.getElementById("deleteChatButton");
+const welcome =
+    document.getElementById("welcome");
 
-const groupModal = document.getElementById("groupModal");
-const groupName = document.getElementById("groupName");
-const groupUsers = document.getElementById("groupUsers");
+const chatWindow =
+    document.getElementById("chatWindow");
 
-const cancelGroupButton = document.getElementById("cancelGroupButton");
-const confirmGroupButton = document.getElementById("confirmGroupButton");
+const chatTitle =
+    document.getElementById("chatTitle");
 
-const adminButton = document.getElementById("adminButton");
+const chatStatus =
+    document.getElementById("chatStatus");
 
-const adminPanel = document.getElementById("adminPanel");
-const adminCloseButton = document.getElementById("adminCloseButton");
+const messages =
+    document.getElementById("messages");
 
-const adminUserCount = document.getElementById("adminUserCount");
-const adminSearch = document.getElementById("adminSearch");
-const adminSyncButton = document.getElementById("adminSyncButton");
-const adminSyncStatus = document.getElementById("adminSyncStatus");
+const messageInput =
+    document.getElementById("messageInput");
 
-const adminUsers = document.getElementById("adminUsers");
-const adminEmpty = document.getElementById("adminEmpty");
-
-const adminDetails = document.getElementById("adminDetails");
-const adminDetailName = document.getElementById("adminDetailName");
-const adminDetailEmail = document.getElementById("adminDetailEmail");
-const adminDetailUid = document.getElementById("adminDetailUid");
-const adminDetailCreated = document.getElementById("adminDetailCreated");
-const adminHistory = document.getElementById("adminHistory");
+const sendButton =
+    document.getElementById("sendButton");
 
 
-/* =========================================================
-   ESTADO
-========================================================= */
+/* =========================
+   VARIABLES
+========================= */
 
 let currentUser = null;
-let currentUserProfile = null;
+let currentProfile = null;
 
-let allUsers = [];
-let allConversations = [];
+let currentConversationId = null;
+let currentOtherUser = null;
 
-let selectedConversationId = null;
-let selectedConversation = null;
-
-let selectedAdminUser = null;
-
-let unsubscribeConversations = null;
 let unsubscribeMessages = null;
-let unsubscribeTyping = null;
+let unsubscribeChats = null;
 
-let typingTimeout = null;
-
-
-/* =========================================================
-   UTILIDADES
-========================================================= */
-
-function escapeHtml(text) {
-  const div = document.createElement("div");
-  div.textContent = text ?? "";
-  return div.innerHTML;
-}
+let creatingAccount = false;
 
 
-function formatDate(timestamp) {
-  if (!timestamp) {
-    return "";
-  }
+/* =========================
+   MENSAJE DE AUTENTICACIÓN
+========================= */
 
-  let date;
+function showAuthMessage(message, error = false) {
 
-  if (timestamp.toDate) {
-    date = timestamp.toDate();
-  } else if (timestamp instanceof Date) {
-    date = timestamp;
-  } else {
-    return "";
-  }
+    authMessage.textContent = message;
 
-  return date.toLocaleString("es-UY", {
-    day: "2-digit",
-    month: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit"
-  });
-}
-
-
-function formatCreatedDate(timestamp) {
-  if (!timestamp || !timestamp.toDate) {
-    return "Desconocida";
-  }
-
-  return timestamp.toDate().toLocaleString("es-UY");
-}
-
-
-function isAdminUser() {
-  return (
-    currentUser &&
-    currentUser.email &&
-    currentUser.email.toLowerCase() === ADMIN_EMAIL
-  );
-}
-
-
-/* =========================================================
-   ENLACES CLICKEABLES
-========================================================= */
-
-function makeLinksClickable(text) {
-  const escaped = escapeHtml(text);
-
-  const urlRegex = /((https?:\/\/|www\.)[^\s<]+)/gi;
-
-  return escaped.replace(urlRegex, (url) => {
-    let href = url;
-
-    if (href.toLowerCase().startsWith("www.")) {
-      href = "https://" + href;
+    if (error) {
+        authMessage.style.color = "#ff4d4d";
+    } else {
+        authMessage.style.color = "";
     }
-
-    return `
-      <a
-        href="${href}"
-        target="_blank"
-        rel="noopener noreferrer"
-        class="chat-link"
-      >${url}</a>
-    `;
-  });
 }
 
 
-/* =========================================================
-   LOGIN / REGISTRO
-========================================================= */
+/* =========================
+   MOSTRAR APP
+========================= */
+
+function showApp() {
+
+    authScreen.classList.add("hidden");
+    app.classList.remove("hidden");
+}
+
+
+/* =========================
+   MOSTRAR LOGIN
+========================= */
+
+function showAuth() {
+
+    app.classList.add("hidden");
+    authScreen.classList.remove("hidden");
+}
+
+
+/* =========================
+   CAMBIAR FORMULARIOS
+========================= */
 
 function showLoginForm() {
-  loginForm?.classList.remove("hidden");
-  registerForm?.classList.add("hidden");
 
-  if (authMessage) {
-    authMessage.textContent = "";
-  }
+    loginForm.classList.remove("hidden");
+    registerForm.classList.add("hidden");
+
+    showAuthMessage("");
 }
 
 
 function showRegisterForm() {
-  loginForm?.classList.add("hidden");
-  registerForm?.classList.remove("hidden");
 
-  if (authMessage) {
-    authMessage.textContent = "";
-  }
+    loginForm.classList.add("hidden");
+    registerForm.classList.remove("hidden");
+
+    showAuthMessage("");
 }
 
 
-showRegister?.addEventListener("click", () => {
-  showRegisterForm();
-});
-
-
-showLogin?.addEventListener("click", () => {
-  showLoginForm();
-});
-
-
-loginForm?.addEventListener("submit", async (event) => {
-  event.preventDefault();
-
-  const email = loginEmail.value.trim();
-  const password = loginPassword.value;
-
-  if (!email || !password) {
-    authMessage.textContent = "Completá todos los campos.";
-    return;
-  }
-
-  loginButton.disabled = true;
-  authMessage.textContent = "Iniciando sesión...";
-
-  try {
-    await signInWithEmailAndPassword(
-      auth,
-      email,
-      password
-    );
-
-    loginForm.reset();
-    authMessage.textContent = "";
-
-  } catch (error) {
-    console.error(error);
-
-    if (error.code === "auth/invalid-credential") {
-      authMessage.textContent =
-        "Correo o contraseña incorrectos.";
-    } else if (error.code === "auth/invalid-email") {
-      authMessage.textContent =
-        "El correo no es válido.";
-    } else if (error.code === "auth/too-many-requests") {
-      authMessage.textContent =
-        "Demasiados intentos. Esperá un momento.";
-    } else {
-      authMessage.textContent =
-        error.message;
-    }
-  }
-
-  loginButton.disabled = false;
-});
-
-
-registerForm?.addEventListener("submit", async (event) => {
-  event.preventDefault();
-
-  const email = registerEmail.value.trim();
-  const username = registerUsername.value.trim();
-  const password = registerPassword.value;
-
-  if (!email || !username || !password) {
-    authMessage.textContent =
-      "Completá todos los campos.";
-    return;
-  }
-
-  if (username.length < 3) {
-    authMessage.textContent =
-      "El nombre debe tener al menos 3 caracteres.";
-    return;
-  }
-
-  if (password.length < 6) {
-    authMessage.textContent =
-      "La contraseña debe tener al menos 6 caracteres.";
-    return;
-  }
-
-  registerButton.disabled = true;
-  authMessage.textContent =
-    "Comprobando nombre de usuario...";
-
-  try {
-    const usernameLower =
-      username.toLowerCase();
-
-    const usernameQuery = query(
-      collection(db, "users"),
-      where(
-        "usernameLower",
-        "==",
-        usernameLower
-      )
-    );
-
-    const usernameSnapshot =
-      await getDocs(usernameQuery);
-
-    if (!usernameSnapshot.empty) {
-      authMessage.textContent =
-        "Ese nombre de usuario ya está usado.";
-
-      registerButton.disabled = false;
-      return;
-    }
-
-    authMessage.textContent =
-      "Creando cuenta...";
-
-    const credential =
-      await createUserWithEmailAndPassword(
-        auth,
-        email,
-        password
-      );
-
-    const user = credential.user;
-
-    /*
-      Creamos el perfil inmediatamente después
-      de crear la cuenta de Authentication.
-    */
-
-    await setDoc(
-      doc(db, "users", user.uid),
-      {
-        username: username,
-        usernameLower: usernameLower,
-        email: email,
-        createdAt: serverTimestamp()
-      }
-    );
-
-    authMessage.textContent =
-      "Cuenta creada correctamente.";
-
-    registerForm.reset();
-
-  } catch (error) {
-    console.error(
-      "ERROR REGISTRO:",
-      error
-    );
-
-    if (error.code === "auth/email-already-in-use") {
-      authMessage.textContent =
-        "Ese correo ya está registrado.";
-
-    } else if (error.code === "auth/invalid-email") {
-      authMessage.textContent =
-        "El correo no es válido.";
-
-    } else if (error.code === "auth/weak-password") {
-      authMessage.textContent =
-        "La contraseña es demasiado débil.";
-
-    } else if (error.code === "permission-denied") {
-      authMessage.textContent =
-        "Firebase rechazó la creación del perfil.";
-
-    } else {
-      authMessage.textContent =
-        "Error: " + error.message;
-    }
-  }
-
-  registerButton.disabled = false;
-});
-
-
-logoutButton?.addEventListener("click", async () => {
-  try {
-    await signOut(auth);
-  } catch (error) {
-    console.error(error);
-  }
-});
-
-
-/* =========================================================
-   ESTADO DE AUTENTICACIÓN
-========================================================= */
-
-onAuthStateChanged(auth, async (user) => {
-  currentUser = user;
-
-  if (!user) {
-    currentUserProfile = null;
-
-    authScreen?.classList.remove("hidden");
-    app?.classList.add("hidden");
-
-    adminPanel?.classList.add("hidden");
-
-    stopConversationListener();
-    stopMessageListener();
-    stopTypingListener();
-
-    return;
-  }
-
-  try {
-    const profileRef =
-      doc(db, "users", user.uid);
-
-    const profileSnapshot =
-      await getDoc(profileRef);
-
-    /*
-      Si Authentication tiene usuario pero
-      Firestore no tiene perfil, lo reconstruimos.
-    */
-
-    if (!profileSnapshot.exists()) {
-
-      const fallbackUsername =
-        user.email?.split("@")[0] ||
-        "Usuario";
-
-      await setDoc(
-        profileRef,
-        {
-          username: fallbackUsername,
-          usernameLower:
-            fallbackUsername.toLowerCase(),
-          email: user.email || "",
-          createdAt: serverTimestamp()
-        }
-      );
-
-      currentUserProfile = {
-        username: fallbackUsername,
-        email: user.email || ""
-      };
-
-    } else {
-
-      currentUserProfile =
-        profileSnapshot.data();
-    }
-
-    authScreen?.classList.add("hidden");
-    app?.classList.remove("hidden");
-
-    if (currentUserElement) {
-      currentUserElement.textContent =
-        currentUserProfile.username ||
-        user.email ||
-        "Usuario";
-    }
-
-    if (adminButton) {
-      if (isAdminUser()) {
-        adminButton.classList.remove("hidden");
-      } else {
-        adminButton.classList.add("hidden");
-      }
-    }
-
-    await loadUsers();
-
-    startConversationListener();
-
-    if (
-      window.location.pathname === "/admin" &&
-      isAdminUser()
-    ) {
-      openAdminPanel();
-    }
-
-  } catch (error) {
-    console.error(
-      "ERROR CARGANDO PERFIL:",
-      error
-    );
-
-    authMessage.textContent =
-      "No se pudo cargar tu perfil: " +
-      error.message;
-  }
-});
-
-
-/* =========================================================
-   USUARIOS
-========================================================= */
-
-async function loadUsers() {
-  if (!currentUser) {
-    return;
-  }
-
-  try {
-    const snapshot =
-      await getDocs(
-        collection(db, "users")
-      );
-
-    allUsers = [];
-
-    snapshot.forEach((userDoc) => {
-      allUsers.push({
-        uid: userDoc.id,
-        ...userDoc.data()
-      });
-    });
-
-    allUsers.sort((a, b) => {
-      return (a.username || "").localeCompare(
-        b.username || "",
-        "es"
-      );
-    });
-
-  } catch (error) {
-    console.error(
-      "ERROR CARGANDO USUARIOS:",
-      error
-    );
-  }
-}
-
-
-function getUserById(uid) {
-  return (
-    allUsers.find(
-      (user) => user.uid === uid
-    ) || null
-  );
-}
-
-
-function getUsername(uid) {
-  if (uid === currentUser?.uid) {
-    return (
-      currentUserProfile?.username ||
-      currentUser?.email ||
-      "Vos"
-    );
-  }
-
-  const user = getUserById(uid);
-
-  return user?.username || "Usuario";
-}
-
-
-/* =========================================================
-   BUSCAR USUARIOS
-========================================================= */
-
-userSearch?.addEventListener(
-  "input",
-  () => {
-
-    const search =
-      userSearch.value
-        .trim()
-        .toLowerCase();
-
-    if (!search) {
-      searchResults.innerHTML = "";
-      searchResults.classList.add("hidden");
-      return;
-    }
-
-    const results =
-      allUsers.filter((user) => {
-
-        if (
-          user.uid === currentUser?.uid
-        ) {
-          return false;
-        }
-
-        const username =
-          (user.username || "")
-            .toLowerCase();
-
-        const email =
-          (user.email || "")
-            .toLowerCase();
-
-        return (
-          username.includes(search) ||
-          email.includes(search)
-        );
-      });
-
-    renderSearchResults(results);
-  }
+showRegisterButton.addEventListener(
+    "click",
+    showRegisterForm
 );
 
 
-function renderSearchResults(results) {
-  searchResults.innerHTML = "";
-
-  if (results.length === 0) {
-
-    searchResults.innerHTML = `
-      <div class="search-empty">
-        No se encontraron usuarios.
-      </div>
-    `;
-
-    searchResults.classList.remove("hidden");
-    return;
-  }
-
-  results.forEach((user) => {
-
-    const button =
-      document.createElement("button");
-
-    button.className =
-      "search-result";
-
-    button.innerHTML = `
-      <strong>
-        ${escapeHtml(
-          user.username || "Usuario"
-        )}
-      </strong>
-
-      <span>
-        ${escapeHtml(
-          user.email || ""
-        )}
-      </span>
-    `;
-
-    button.addEventListener(
-      "click",
-      () => {
-
-        openPrivateConversation(user);
-
-        userSearch.value = "";
-        searchResults.innerHTML = "";
-        searchResults.classList.add("hidden");
-      }
-    );
-
-    searchResults.appendChild(button);
-  });
-
-  searchResults.classList.remove("hidden");
-}
+showLoginButton.addEventListener(
+    "click",
+    showLoginForm
+);
 
 
-/* =========================================================
-   CONVERSACIONES
-========================================================= */
+/* =========================
+   REGISTRO
+========================= */
 
-function startConversationListener() {
-  stopConversationListener();
+async function register() {
 
-  if (!currentUser) {
-    return;
-  }
+    const email =
+        registerEmail.value.trim();
 
-  const conversationsQuery =
-    query(
-      collection(db, "conversations"),
-      where(
-        "members",
-        "array-contains",
-        currentUser.uid
-      )
-    );
+    const username =
+        registerUsername.value.trim();
 
-  unsubscribeConversations =
-    onSnapshot(
-      conversationsQuery,
-      (snapshot) => {
+    const password =
+        registerPassword.value;
 
-        allConversations = [];
+    if (!email) {
 
-        snapshot.forEach((conversationDoc) => {
-
-          allConversations.push({
-            id: conversationDoc.id,
-            ...conversationDoc.data()
-          });
-        });
-
-        allConversations.sort(
-          (a, b) => {
-
-            const timeA =
-              a.lastMessageAt?.toMillis?.() ||
-              0;
-
-            const timeB =
-              b.lastMessageAt?.toMillis?.() ||
-              0;
-
-            return timeB - timeA;
-          }
+        showAuthMessage(
+            "Escribe tu correo electrónico.",
+            true
         );
 
-        renderConversationList();
+        return;
+    }
 
-        if (selectedConversationId) {
+    if (!username) {
 
-          const updated =
-            allConversations.find(
-              (conversation) =>
-                conversation.id ===
-                selectedConversationId
+        showAuthMessage(
+            "Escribe un nombre de usuario.",
+            true
+        );
+
+        return;
+    }
+
+    if (username.length < 3) {
+
+        showAuthMessage(
+            "El usuario debe tener al menos 3 caracteres.",
+            true
+        );
+
+        return;
+    }
+
+    if (!password) {
+
+        showAuthMessage(
+            "Escribe una contraseña.",
+            true
+        );
+
+        return;
+    }
+
+    if (password.length < 6) {
+
+        showAuthMessage(
+            "La contraseña debe tener al menos 6 caracteres.",
+            true
+        );
+
+        return;
+    }
+
+    registerButton.disabled = true;
+    creatingAccount = true;
+
+    showAuthMessage(
+        "Creando cuenta..."
+    );
+
+    try {
+
+        console.log(
+            "PASO 1: Creando cuenta en Authentication..."
+        );
+
+        const userCredential =
+            await createUserWithEmailAndPassword(
+                auth,
+                email,
+                password
             );
 
-          if (updated) {
+        const user =
+            userCredential.user;
 
-            selectedConversation =
-              updated;
+        console.log(
+            "PASO 2: Authentication OK"
+        );
 
-            updateChatHeader();
-          }
-        }
-      },
-      (error) => {
+        console.log(
+            "UID:",
+            user.uid
+        );
+
+        console.log(
+            "PASO 3: Creando perfil en Firestore..."
+        );
+
+        const userRef =
+            doc(
+                db,
+                "users",
+                user.uid
+            );
+
+        await setDoc(
+            userRef,
+            {
+                username:
+                    username,
+
+                usernameLower:
+                    username.toLowerCase(),
+
+                email:
+                    email,
+
+                createdAt:
+                    serverTimestamp()
+            }
+        );
+
+        console.log(
+            "PASO 4: Firestore OK"
+        );
+
+        currentUser = user;
+
+        currentProfile = {
+            username:
+                username,
+
+            usernameLower:
+                username.toLowerCase(),
+
+            email:
+                email
+        };
+
+        registerEmail.value = "";
+        registerUsername.value = "";
+        registerPassword.value = "";
+
+        showAuthMessage(
+            "¡Cuenta creada correctamente!"
+        );
+
+        await enterApp();
+
+    } catch (error) {
 
         console.error(
-          "ERROR CONVERSACIONES:",
-          error
-        );
-      }
-    );
-}
-
-
-function stopConversationListener() {
-  if (unsubscribeConversations) {
-    unsubscribeConversations();
-    unsubscribeConversations = null;
-  }
-}
-
-
-function renderConversationList() {
-  chatList.innerHTML = "";
-
-  if (allConversations.length === 0) {
-
-    chatList.innerHTML = `
-      <div class="chat-list-empty">
-        No tenés conversaciones todavía.
-      </div>
-    `;
-
-    return;
-  }
-
-  allConversations.forEach(
-    (conversation) => {
-
-      const button =
-        document.createElement("button");
-
-      button.className =
-        "chat-list-item";
-
-      const title =
-        getConversationTitle(
-          conversation
+            "========== ERROR FIREBASE =========="
         );
 
-      const preview =
-        conversation.lastMessage ||
-        "Sin mensajes";
+        console.error(
+            "Código:",
+            error.code
+        );
 
-      button.innerHTML = `
-        <div class="chat-list-main">
+        console.error(
+            "Mensaje:",
+            error.message
+        );
 
-          <strong>
-            ${escapeHtml(title)}
-          </strong>
+        console.error(
+            "Error completo:",
+            error
+        );
 
-          <span>
-            ${escapeHtml(preview)}
-          </span>
+        console.error(
+            "===================================="
+        );
 
-        </div>
+        let message =
+            "ERROR REAL: " +
+            error.code +
+            " | " +
+            error.message;
 
-        <div class="chat-list-time">
-          ${formatDate(
-            conversation.lastMessageAt
-          )}
-        </div>
-      `;
+        showAuthMessage(
+            message,
+            true
+        );
 
-      button.addEventListener(
-        "click",
-        () => {
-          openConversation(
-            conversation
-          );
-        }
-      );
+    } finally {
 
-      chatList.appendChild(button);
+        registerButton.disabled = false;
+        creatingAccount = false;
     }
-  );
 }
 
 
-function getConversationTitle(
-  conversation
-) {
-
-  if (
-    conversation.type === "group"
-  ) {
-    return (
-      conversation.name ||
-      "Grupo"
-    );
-  }
-
-  const otherUid =
-    conversation.members?.find(
-      (uid) =>
-        uid !== currentUser?.uid
-    );
-
-  return (
-    getUsername(otherUid) ||
-    "Chat"
-  );
-}
+registerButton.addEventListener(
+    "click",
+    register
+);
 
 
-async function openPrivateConversation(
-  user
-) {
+/* =========================
+   LOGIN
+========================= */
 
-  if (!currentUser || !user) {
-    return;
-  }
+async function login() {
 
-  const existing =
-    allConversations.find(
-      (conversation) => {
+    const email =
+        loginEmail.value.trim();
 
-        return (
-          conversation.type ===
-            "private" &&
+    const password =
+        loginPassword.value;
 
-          Array.isArray(
-            conversation.members
-          ) &&
+    if (!email) {
 
-          conversation.members.length ===
-            2 &&
-
-          conversation.members.includes(
-            currentUser.uid
-          ) &&
-
-          conversation.members.includes(
-            user.uid
-          )
+        showAuthMessage(
+            "Escribe tu correo electrónico.",
+            true
         );
-      }
+
+        return;
+    }
+
+    if (!password) {
+
+        showAuthMessage(
+            "Escribe tu contraseña.",
+            true
+        );
+
+        return;
+    }
+
+    loginButton.disabled = true;
+
+    showAuthMessage(
+        "Iniciando sesión..."
     );
 
-  if (existing) {
-    openConversation(existing);
-    return;
-  }
+    try {
 
-  try {
+        console.log(
+            "LOGIN PASO 1: Authentication..."
+        );
 
-    const conversationRef =
-      await addDoc(
+        const userCredential =
+            await signInWithEmailAndPassword(
+                auth,
+                email,
+                password
+            );
+
+        const user =
+            userCredential.user;
+
+        console.log(
+            "LOGIN PASO 2: Authentication OK"
+        );
+
+        console.log(
+            "UID:",
+            user.uid
+        );
+
+        console.log(
+            "LOGIN PASO 3: Buscando perfil..."
+        );
+
+        const userSnapshot =
+            await getDoc(
+                doc(
+                    db,
+                    "users",
+                    user.uid
+                )
+            );
+
+        console.log(
+            "LOGIN PASO 4: Perfil existe:",
+            userSnapshot.exists()
+        );
+
+        if (!userSnapshot.exists()) {
+
+            showAuthMessage(
+                "La cuenta existe, pero no tiene perfil en Firestore.",
+                true
+            );
+
+            return;
+        }
+
+        currentUser = user;
+
+        currentProfile =
+            userSnapshot.data();
+
+        console.log(
+            "LOGIN PASO 5: Perfil:",
+            currentProfile
+        );
+
+        currentUserElement.textContent =
+            "@" +
+            currentProfile.username;
+
+        showApp();
+
+        console.log(
+            "LOGIN PASO 6: App abierta"
+        );
+
+        await loadConversations();
+
+    } catch (error) {
+
+        console.error(
+            "========== ERROR LOGIN =========="
+        );
+
+        console.error(
+            "Código:",
+            error.code
+        );
+
+        console.error(
+            "Mensaje:",
+            error.message
+        );
+
+        console.error(
+            "Error completo:",
+            error
+        );
+
+        console.error(
+            "================================="
+        );
+
+        let message =
+            "ERROR LOGIN: " +
+            error.code +
+            " | " +
+            error.message;
+
+        showAuthMessage(
+            message,
+            true
+        );
+
+    } finally {
+
+        loginButton.disabled = false;
+    }
+}
+
+
+loginButton.addEventListener(
+    "click",
+    login
+);
+
+
+/* =========================
+   ENTER LOGIN
+========================= */
+
+loginPassword.addEventListener(
+    "keydown",
+    event => {
+
+        if (event.key === "Enter") {
+
+            event.preventDefault();
+
+            login();
+        }
+    }
+);
+
+
+/* =========================
+   ENTER REGISTRO
+========================= */
+
+registerPassword.addEventListener(
+    "keydown",
+    event => {
+
+        if (event.key === "Enter") {
+
+            event.preventDefault();
+
+            register();
+        }
+    }
+);
+
+
+/* =========================
+   CARGAR PERFIL
+========================= */
+
+async function loadUserProfile(user) {
+
+    const userSnapshot =
+        await getDoc(
+            doc(
+                db,
+                "users",
+                user.uid
+            )
+        );
+
+    if (!userSnapshot.exists()) {
+        return null;
+    }
+
+    return userSnapshot.data();
+}
+
+
+/* =========================
+   ENTRAR A LA APP
+========================= */
+
+async function enterApp() {
+
+    if (!currentUser) {
+        return;
+    }
+
+    try {
+
+        if (!currentProfile) {
+
+            currentProfile =
+                await loadUserProfile(
+                    currentUser
+                );
+        }
+
+        if (!currentProfile) {
+
+            showAuthMessage(
+                "No se encontró tu perfil.",
+                true
+            );
+
+            return;
+        }
+
+        currentUserElement.textContent =
+            "@" +
+            currentProfile.username;
+
+        showApp();
+
+        await loadConversations();
+
+    } catch (error) {
+
+        console.error(
+            "Error entrando a la app:",
+            error
+        );
+
+        showAuthMessage(
+            "Error: " +
+            error.code +
+            " | " +
+            error.message,
+            true
+        );
+    }
+}
+
+
+/* =========================
+   ESTADO AUTH
+========================= */
+
+onAuthStateChanged(
+    auth,
+    async user => {
+
+        console.log(
+            "AUTH STATE:",
+            user
+        );
+
+        if (!user) {
+
+            currentUser = null;
+            currentProfile = null;
+
+            showAuth();
+
+            return;
+        }
+
+        currentUser = user;
+
+        if (creatingAccount) {
+
+            console.log(
+                "Cuenta en proceso de creación..."
+            );
+
+            return;
+        }
+
+        try {
+
+            currentProfile =
+                await loadUserProfile(
+                    user
+                );
+
+            if (!currentProfile) {
+
+                console.error(
+                    "No existe el perfil."
+                );
+
+                return;
+            }
+
+            await enterApp();
+
+        } catch (error) {
+
+            console.error(
+                "Error AUTH:",
+                error
+            );
+        }
+    }
+);
+
+
+/* =========================
+   LOGOUT
+========================= */
+
+logoutButton.addEventListener(
+    "click",
+    async () => {
+
+        try {
+
+            if (unsubscribeChats) {
+
+                unsubscribeChats();
+                unsubscribeChats = null;
+            }
+
+            if (unsubscribeMessages) {
+
+                unsubscribeMessages();
+                unsubscribeMessages = null;
+            }
+
+            currentConversationId = null;
+            currentOtherUser = null;
+            currentProfile = null;
+
+            await signOut(auth);
+
+            chatWindow.classList.add(
+                "hidden"
+            );
+
+            welcome.classList.remove(
+                "hidden"
+            );
+
+            messages.innerHTML = "";
+            chatList.innerHTML = "";
+            searchResults.innerHTML = "";
+
+        } catch (error) {
+
+            console.error(
+                "Error cerrando sesión:",
+                error
+            );
+        }
+    }
+);
+
+
+/* =========================
+   BUSCAR USUARIOS
+========================= */
+
+let searchTimeout = null;
+
+userSearch.addEventListener(
+    "input",
+    () => {
+
+        clearTimeout(searchTimeout);
+
+        searchTimeout =
+            setTimeout(
+                searchUsers,
+                300
+            );
+    }
+);
+
+
+async function searchUsers() {
+
+    const text =
+        userSearch.value
+            .trim()
+            .toLowerCase();
+
+    searchResults.innerHTML = "";
+
+    if (!text) {
+        return;
+    }
+
+    if (!currentUser) {
+        return;
+    }
+
+    try {
+
+        const usersSnapshot =
+            await getDocs(
+                collection(
+                    db,
+                    "users"
+                )
+            );
+
+        const foundUsers = [];
+
+        usersSnapshot.forEach(
+            userDocument => {
+
+                const data =
+                    userDocument.data();
+
+                if (
+                    userDocument.id ===
+                    currentUser.uid
+                ) {
+                    return;
+                }
+
+                const username =
+                    data.username || "";
+
+                const usernameLower =
+                    data.usernameLower ||
+                    username.toLowerCase();
+
+                if (
+                    usernameLower.includes(
+                        text
+                    )
+                ) {
+
+                    foundUsers.push({
+                        id:
+                            userDocument.id,
+
+                        username:
+                            username,
+
+                        email:
+                            data.email || ""
+                    });
+                }
+            }
+        );
+
+        if (foundUsers.length === 0) {
+
+            searchResults.innerHTML =
+                '<div class="no-results">No se encontraron usuarios.</div>';
+
+            return;
+        }
+
+        foundUsers.forEach(
+            user => {
+
+                const element =
+                    document.createElement(
+                        "div"
+                    );
+
+                element.className =
+                    "search-result";
+
+                element.innerHTML = `
+                    <div class="search-result-name">
+                        ${escapeHtml(user.username)}
+                    </div>
+
+                    <div class="search-result-email">
+                        ${escapeHtml(user.email)}
+                    </div>
+                `;
+
+                element.addEventListener(
+                    "click",
+                    () => {
+
+                        openConversationWithUser(
+                            user.id,
+                            user.username
+                        );
+
+                        userSearch.value = "";
+
+                        searchResults.innerHTML = "";
+                    }
+                );
+
+                searchResults.appendChild(
+                    element
+                );
+            }
+        );
+
+    } catch (error) {
+
+        console.error(
+            "Error buscando usuarios:",
+            error
+        );
+
+        searchResults.innerHTML =
+            `
+            <div class="no-results">
+                Error: ${escapeHtml(error.message)}
+            </div>
+            `;
+    }
+}
+
+
+/* =========================
+   ABRIR CONVERSACIÓN
+========================= */
+
+async function openConversationWithUser(
+    otherUserId,
+    otherUsername
+) {
+
+    if (!currentUser) {
+        return;
+    }
+
+    try {
+
+        const conversationId =
+            await findOrCreateConversation(
+                otherUserId
+            );
+
+        currentConversationId =
+            conversationId;
+
+        currentOtherUser = {
+            id:
+                otherUserId,
+
+            username:
+                otherUsername
+        };
+
+        chatTitle.textContent =
+            otherUsername;
+
+        chatStatus.textContent =
+            "Chat";
+
+        welcome.classList.add(
+            "hidden"
+        );
+
+        chatWindow.classList.remove(
+            "hidden"
+        );
+
+        await loadMessages(
+            conversationId
+        );
+
+        messageInput.focus();
+
+    } catch (error) {
+
+        console.error(
+            "Error abriendo conversación:",
+            error
+        );
+
+        alert(
+            "Error:\n" +
+            error.message
+        );
+    }
+}
+
+
+/* =========================
+   BUSCAR / CREAR CONVERSACIÓN
+========================= */
+
+async function findOrCreateConversation(
+    otherUserId
+) {
+
+    const conversationsRef =
         collection(
-          db,
-          "conversations"
-        ),
-        {
-          type: "private",
-
-          members: [
-            currentUser.uid,
-            user.uid
-          ],
-
-          createdAt:
-            serverTimestamp(),
-
-          lastMessage: "",
-
-          lastMessageAt:
-            serverTimestamp()
-        }
-      );
-
-    const conversation = {
-      id: conversationRef.id,
-      type: "private",
-      members: [
-        currentUser.uid,
-        user.uid
-      ],
-      lastMessage: "",
-      lastMessageAt: null
-    };
-
-    openConversation(
-      conversation
-    );
-
-  } catch (error) {
-
-    console.error(
-      "ERROR CREANDO CHAT:",
-      error
-    );
-
-    alert(
-      "No se pudo crear el chat: " +
-      error.message
-    );
-  }
-}
-
-
-function openConversation(
-  conversation
-) {
-
-  selectedConversation =
-    conversation;
-
-  selectedConversationId =
-    conversation.id;
-
-  welcome?.classList.add("hidden");
-  chatWindow?.classList.remove("hidden");
-
-  updateChatHeader();
-
-  startMessageListener(
-    conversation.id
-  );
-
-  startTypingListener(
-    conversation.id
-  );
-}
-
-
-function updateChatHeader() {
-
-  if (!selectedConversation) {
-    return;
-  }
-
-  if (
-    selectedConversation.type ===
-    "group"
-  ) {
-
-    chatTitle.textContent =
-      selectedConversation.name ||
-      "Grupo";
-
-  } else {
-
-    const otherUid =
-      selectedConversation.members?.find(
-        (uid) =>
-          uid !== currentUser?.uid
-      );
-
-    chatTitle.textContent =
-      getUsername(otherUid) ||
-      "Usuario";
-  }
-}
-
-
-/* =========================================================
-   MENSAJES
-========================================================= */
-
-function startMessageListener(
-  conversationId
-) {
-
-  stopMessageListener();
-
-  const messagesQuery =
-    query(
-      collection(
-        db,
-        "conversations",
-        conversationId,
-        "messages"
-      ),
-      orderBy(
-        "createdAt",
-        "asc"
-      )
-    );
-
-  unsubscribeMessages =
-    onSnapshot(
-      messagesQuery,
-      (snapshot) => {
-        renderMessages(snapshot);
-      },
-      (error) => {
-
-        console.error(
-          "ERROR MENSAJES:",
-          error
-        );
-      }
-    );
-}
-
-
-function stopMessageListener() {
-
-  if (unsubscribeMessages) {
-    unsubscribeMessages();
-    unsubscribeMessages = null;
-  }
-}
-
-
-function renderMessages(
-  snapshot
-) {
-
-  messagesElement.innerHTML = "";
-
-  snapshot.forEach(
-    (messageDoc) => {
-
-      const message = {
-        id: messageDoc.id,
-        ...messageDoc.data()
-      };
-
-      const ownMessage =
-        message.senderId ===
-        currentUser?.uid;
-
-      /*
-        Primero usamos senderName guardado
-        en el mensaje.
-        Si es un mensaje viejo,
-        buscamos el usuario.
-      */
-
-      const senderName =
-        message.senderName ||
-        getUsername(
-          message.senderId
-        ) ||
-        "Usuario";
-
-      const element =
-        document.createElement("div");
-
-      element.className =
-        ownMessage
-          ? "message own"
-          : "message";
-
-      let senderHtml = "";
-
-      if (
-        selectedConversation?.type ===
-          "group" &&
-        !ownMessage
-      ) {
-
-        senderHtml = `
-          <div class="message-sender">
-            ${escapeHtml(senderName)}
-          </div>
-        `;
-      }
-
-      let deleteHtml = "";
-
-      if (ownMessage) {
-
-        deleteHtml = `
-          <button
-            class="delete-message"
-            title="Eliminar mensaje"
-          >
-            🗑
-          </button>
-        `;
-      }
-
-      element.innerHTML = `
-        <div class="message-content">
-
-          ${senderHtml}
-
-          <div class="message-text">
-            ${makeLinksClickable(
-              message.content || ""
-            )}
-          </div>
-
-          <div class="message-footer">
-
-            <span class="message-time">
-              ${formatDate(
-                message.createdAt
-              )}
-            </span>
-
-            ${deleteHtml}
-
-          </div>
-
-        </div>
-      `;
-
-      const deleteButton =
-        element.querySelector(
-          ".delete-message"
+            db,
+            "conversations"
         );
 
-      deleteButton?.addEventListener(
-        "click",
-        async (event) => {
+    const q =
+        query(
+            conversationsRef,
+            where(
+                "members",
+                "array-contains",
+                currentUser.uid
+            )
+        );
 
-          event.stopPropagation();
+    const snapshot =
+        await getDocs(q);
 
-          await deleteOwnMessage(
-            message.id
-          );
+    for (
+        const conversationDocument
+        of snapshot.docs
+    ) {
+
+        const data =
+            conversationDocument.data();
+
+        const members =
+            data.members || [];
+
+        if (
+            members.length === 2 &&
+            members.includes(
+                otherUserId
+            )
+        ) {
+
+            return conversationDocument.id;
         }
-      );
-
-      messagesElement.appendChild(
-        element
-      );
     }
-  );
 
-  messagesElement.scrollTop =
-    messagesElement.scrollHeight;
+    const newConversation =
+        await addDoc(
+            conversationsRef,
+            {
+                members: [
+                    currentUser.uid,
+                    otherUserId
+                ],
+
+                createdAt:
+                    serverTimestamp(),
+
+                lastMessage:
+                    "",
+
+                lastMessageAt:
+                    serverTimestamp()
+            }
+        );
+
+    return newConversation.id;
 }
 
 
-/* =========================================================
+/* =========================
+   CARGAR MENSAJES
+========================= */
+
+async function loadMessages(
+    conversationId
+) {
+
+    if (unsubscribeMessages) {
+
+        unsubscribeMessages();
+
+        unsubscribeMessages = null;
+    }
+
+    messages.innerHTML = "";
+
+    const messagesRef =
+        collection(
+            db,
+            "conversations",
+            conversationId,
+            "messages"
+        );
+
+    const q =
+        query(
+            messagesRef,
+            orderBy(
+                "createdAt",
+                "asc"
+            )
+        );
+
+    unsubscribeMessages =
+        onSnapshot(
+            q,
+            snapshot => {
+
+                messages.innerHTML = "";
+
+                snapshot.forEach(
+                    messageDocument => {
+
+                        displayMessage(
+                            messageDocument.data()
+                        );
+                    }
+                );
+
+                messages.scrollTop =
+                    messages.scrollHeight;
+            },
+
+            error => {
+
+                console.error(
+                    "Error cargando mensajes:",
+                    error
+                );
+
+                messages.innerHTML =
+                    `
+                    <div class="message-error">
+                        Error: ${escapeHtml(error.message)}
+                    </div>
+                    `;
+            }
+        );
+}
+
+
+/* =========================
+   MOSTRAR MENSAJE
+========================= */
+
+function displayMessage(data) {
+
+    const element =
+        document.createElement(
+            "div"
+        );
+
+    const isMine =
+        data.senderId ===
+        currentUser.uid;
+
+    element.className =
+        isMine
+            ? "message mine"
+            : "message other";
+
+    const content =
+        document.createElement(
+            "div"
+        );
+
+    content.className =
+        "message-content";
+
+    content.textContent =
+        data.content || "";
+
+    element.appendChild(
+        content
+    );
+
+    if (data.createdAt) {
+
+        const date =
+            data.createdAt.toDate();
+
+        const time =
+            date.toLocaleTimeString(
+                "es-UY",
+                {
+                    hour: "2-digit",
+                    minute: "2-digit"
+                }
+            );
+
+        const timeElement =
+            document.createElement(
+                "div"
+            );
+
+        timeElement.className =
+            "message-time";
+
+        timeElement.textContent =
+            time;
+
+        element.appendChild(
+            timeElement
+        );
+    }
+
+    messages.appendChild(
+        element
+    );
+}
+
+
+/* =========================
    ENVIAR MENSAJE
-========================================================= */
+========================= */
 
 async function sendMessage() {
 
-  if (!currentUser) {
-    return;
-  }
+    const content =
+        messageInput.value.trim();
 
-  if (!selectedConversationId) {
-    return;
-  }
-
-  const content =
-    messageInput.value.trim();
-
-  if (!content) {
-    return;
-  }
-
-  if (content.length > 4000) {
-    return;
-  }
-
-  sendButton.disabled = true;
-
-  try {
-
-    const senderName =
-      currentUserProfile?.username ||
-      currentUser.email ||
-      "Usuario";
-
-    await addDoc(
-      collection(
-        db,
-        "conversations",
-        selectedConversationId,
-        "messages"
-      ),
-      {
-        senderId:
-          currentUser.uid,
-
-        senderName:
-          senderName,
-
-        content:
-          content,
-
-        createdAt:
-          serverTimestamp()
-      }
-    );
-
-    await updateDoc(
-      doc(
-        db,
-        "conversations",
-        selectedConversationId
-      ),
-      {
-        lastMessage:
-          content,
-
-        lastMessageAt:
-          serverTimestamp()
-      }
-    );
-
-    await setTyping(false);
-
-    messageInput.value = "";
-
-    updateCharacterCounter();
-
-  } catch (error) {
-
-    console.error(
-      "ERROR ENVIANDO MENSAJE:",
-      error
-    );
-
-    alert(
-      "No se pudo enviar el mensaje: " +
-      error.message
-    );
-  }
-
-  sendButton.disabled = false;
-
-  messageInput.focus();
-}
-
-
-sendButton?.addEventListener(
-  "click",
-  sendMessage
-);
-
-
-messageInput?.addEventListener(
-  "keydown",
-  (event) => {
-
-    if (
-      event.key === "Enter" &&
-      !event.shiftKey
-    ) {
-
-      event.preventDefault();
-
-      sendMessage();
-    }
-  }
-);
-
-
-/* =========================================================
-   CONTADOR
-========================================================= */
-
-function updateCharacterCounter() {
-
-  if (
-    !characterCounter ||
-    !messageInput
-  ) {
-    return;
-  }
-
-  characterCounter.textContent =
-    `${messageInput.value.length}/4000`;
-}
-
-
-messageInput?.addEventListener(
-  "input",
-  () => {
-
-    updateCharacterCounter();
-
-    handleTyping();
-  }
-);
-
-
-/* =========================================================
-   BORRAR MENSAJE PROPIO
-========================================================= */
-
-async function deleteOwnMessage(
-  messageId
-) {
-
-  if (
-    !selectedConversationId ||
-    !currentUser
-  ) {
-    return;
-  }
-
-  try {
-
-    const messageRef =
-      doc(
-        db,
-        "conversations",
-        selectedConversationId,
-        "messages",
-        messageId
-      );
-
-    const snapshot =
-      await getDoc(messageRef);
-
-    if (!snapshot.exists()) {
-      return;
+    if (!content) {
+        return;
     }
 
-    const message =
-      snapshot.data();
-
-    if (
-      message.senderId !==
-      currentUser.uid
-    ) {
-      return;
+    if (!currentUser) {
+        return;
     }
 
-    await deleteDoc(
-      messageRef
-    );
-
-  } catch (error) {
-
-    console.error(
-      "ERROR BORRANDO MENSAJE:",
-      error
-    );
-  }
-}
-
-
-/* =========================================================
-   ESCRIBIENDO
-========================================================= */
-
-async function setTyping(
-  isTyping
-) {
-
-  if (
-    !currentUser ||
-    !selectedConversationId
-  ) {
-    return;
-  }
-
-  const typingRef =
-    doc(
-      db,
-      "conversations",
-      selectedConversationId,
-      "typing",
-      currentUser.uid
-    );
-
-  try {
-
-    if (isTyping) {
-
-      await setDoc(
-        typingRef,
-        {
-          uid:
-            currentUser.uid,
-
-          username:
-            currentUserProfile?.username ||
-            currentUser.email ||
-            "Usuario",
-
-          updatedAt:
-            serverTimestamp()
-        }
-      );
-
-    } else {
-
-      await deleteDoc(
-        typingRef
-      );
+    if (!currentConversationId) {
+        return;
     }
 
-  } catch (error) {
+    sendButton.disabled = true;
 
-    console.error(
-      "ERROR TYPING:",
-      error
-    );
-  }
-}
+    try {
 
+        const messagesRef =
+            collection(
+                db,
+                "conversations",
+                currentConversationId,
+                "messages"
+            );
 
-function handleTyping() {
+        await addDoc(
+            messagesRef,
+            {
+                senderId:
+                    currentUser.uid,
 
-  if (!selectedConversationId) {
-    return;
-  }
+                content:
+                    content,
 
-  setTyping(true);
-
-  clearTimeout(
-    typingTimeout
-  );
-
-  typingTimeout =
-    setTimeout(
-      () => {
-        setTyping(false);
-      },
-      2500
-    );
-}
-
-
-function startTypingListener(
-  conversationId
-) {
-
-  stopTypingListener();
-
-  const typingCollection =
-    collection(
-      db,
-      "conversations",
-      conversationId,
-      "typing"
-    );
-
-  unsubscribeTyping =
-    onSnapshot(
-      typingCollection,
-      (snapshot) => {
-
-        const writers = [];
-
-        snapshot.forEach(
-          (typingDoc) => {
-
-            const data =
-              typingDoc.data();
-
-            if (
-              data.uid !==
-              currentUser?.uid
-            ) {
-
-              writers.push(
-                data.username ||
-                getUsername(
-                  data.uid
-                ) ||
-                "Alguien"
-              );
+                createdAt:
+                    serverTimestamp()
             }
-          }
         );
 
-        updateTypingText(
-          writers
+        await setDoc(
+            doc(
+                db,
+                "conversations",
+                currentConversationId
+            ),
+            {
+                lastMessage:
+                    content,
+
+                lastMessageAt:
+                    serverTimestamp()
+            },
+            {
+                merge: true
+            }
         );
-      },
-      (error) => {
+
+        messageInput.value = "";
+
+    } catch (error) {
 
         console.error(
-          "ERROR TYPING LISTENER:",
-          error
+            "Error enviando mensaje:",
+            error
         );
-      }
-    );
+
+        alert(
+            "Error enviando mensaje:\n" +
+            error.message
+        );
+
+    } finally {
+
+        sendButton.disabled = false;
+
+        messageInput.focus();
+    }
 }
 
 
-function stopTypingListener() {
-
-  if (unsubscribeTyping) {
-
-    unsubscribeTyping();
-
-    unsubscribeTyping = null;
-  }
-}
-
-
-function updateTypingText(
-  writers
-) {
-
-  if (!chatStatus) {
-    return;
-  }
-
-  if (writers.length === 0) {
-
-    chatStatus.textContent = "";
-
-    return;
-  }
-
-  if (writers.length === 1) {
-
-    chatStatus.textContent =
-      `${writers[0]} está escribiendo...`;
-
-    return;
-  }
-
-  if (writers.length === 2) {
-
-    chatStatus.textContent =
-      `${writers[0]} y ${writers[1]} están escribiendo...`;
-
-    return;
-  }
-
-  chatStatus.textContent =
-    "Varias personas están escribiendo...";
-}
-
-
-/* =========================================================
-   ELIMINAR CONVERSACIÓN
-========================================================= */
-
-deleteChatButton?.addEventListener(
-  "click",
-  async () => {
-
-    if (!selectedConversationId) {
-      return;
-    }
-
-    const confirmed =
-      confirm(
-        "¿Querés eliminar esta conversación?"
-      );
-
-    if (!confirmed) {
-      return;
-    }
-
-    try {
-
-      await deleteConversation(
-        selectedConversationId
-      );
-
-      selectedConversationId =
-        null;
-
-      selectedConversation =
-        null;
-
-      stopMessageListener();
-      stopTypingListener();
-
-      chatWindow?.classList.add("hidden");
-      welcome?.classList.remove("hidden");
-
-    } catch (error) {
-
-      console.error(
-        "ERROR ELIMINANDO CHAT:",
-        error
-      );
-
-      alert(
-        "No se pudo eliminar el chat: " +
-        error.message
-      );
-    }
-  }
+sendButton.addEventListener(
+    "click",
+    sendMessage
 );
 
 
-async function deleteConversation(
-  conversationId
-) {
+messageInput.addEventListener(
+    "keydown",
+    event => {
 
-  const messagesRef =
-    collection(
-      db,
-      "conversations",
-      conversationId,
-      "messages"
-    );
+        if (
+            event.key === "Enter" &&
+            !event.shiftKey
+        ) {
 
-  const snapshot =
-    await getDocs(
-      messagesRef
-    );
+            event.preventDefault();
 
-  let batch =
-    writeBatch(db);
-
-  let count = 0;
-
-  for (
-    const messageDoc of snapshot.docs
-  ) {
-
-    batch.delete(
-      messageDoc.ref
-    );
-
-    count++;
-
-    if (count >= 450) {
-
-      await batch.commit();
-
-      batch =
-        writeBatch(db);
-
-      count = 0;
+            sendMessage();
+        }
     }
-  }
-
-  if (count > 0) {
-    await batch.commit();
-  }
-
-  await deleteDoc(
-    doc(
-      db,
-      "conversations",
-      conversationId
-    )
-  );
-}
+);
 
 
-/* =========================================================
-   GRUPOS
-========================================================= */
+/* =========================
+   CARGAR CHATS
+========================= */
 
-createGroupButton?.addEventListener(
-  "click",
-  async () => {
+async function loadConversations() {
 
     if (!currentUser) {
-      return;
+        return;
     }
 
-    await loadUsers();
+    if (unsubscribeChats) {
 
-    renderGroupUsers();
+        unsubscribeChats();
 
-    groupName.value = "";
-
-    groupModal?.classList.remove(
-      "hidden"
-    );
-  }
-);
-
-
-function renderGroupUsers() {
-
-  groupUsers.innerHTML = "";
-
-  allUsers
-    .filter(
-      (user) =>
-        user.uid !== currentUser?.uid
-    )
-    .forEach(
-      (user) => {
-
-        const label =
-          document.createElement(
-            "label"
-          );
-
-        label.className =
-          "group-user";
-
-        label.innerHTML = `
-          <input
-            type="checkbox"
-            value="${user.uid}"
-          >
-
-          <span>
-
-            <strong>
-              ${escapeHtml(
-                user.username ||
-                "Usuario"
-              )}
-            </strong>
-
-            <small>
-              ${escapeHtml(
-                user.email || ""
-              )}
-            </small>
-
-          </span>
-        `;
-
-        groupUsers.appendChild(
-          label
-        );
-      }
-    );
-}
-
-
-function closeGroupModal() {
-  groupModal?.classList.add(
-    "hidden"
-  );
-}
-
-
-cancelGroupButton?.addEventListener(
-  "click",
-  closeGroupModal
-);
-
-
-confirmGroupButton?.addEventListener(
-  "click",
-  async () => {
-
-    if (!currentUser) {
-      return;
+        unsubscribeChats = null;
     }
 
-    const name =
-      groupName.value.trim();
-
-    if (!name) {
-
-      alert(
-        "Escribí un nombre para el grupo."
-      );
-
-      return;
-    }
-
-    const selectedInputs =
-      [
-        ...groupUsers.querySelectorAll(
-          'input[type="checkbox"]:checked'
-        )
-      ];
-
-    if (
-      selectedInputs.length === 0
-    ) {
-
-      alert(
-        "Seleccioná al menos una persona."
-      );
-
-      return;
-    }
-
-    /*
-      Map evita usuarios repetidos.
-    */
-
-    const membersMap =
-      new Map();
-
-    membersMap.set(
-      currentUser.uid,
-      true
-    );
-
-    selectedInputs.forEach(
-      (input) => {
-
-        membersMap.set(
-          input.value,
-          true
-        );
-      }
-    );
-
-    const members =
-      [...membersMap.keys()];
-
-    confirmGroupButton.disabled =
-      true;
-
-    try {
-
-      const conversationRef =
-        await addDoc(
-          collection(
+    const conversationsRef =
+        collection(
             db,
             "conversations"
-          ),
-          {
-            type: "group",
-
-            name: name,
-
-            ownerId:
-              currentUser.uid,
-
-            members:
-              members,
-
-            createdAt:
-              serverTimestamp(),
-
-            lastMessage: "",
-
-            lastMessageAt:
-              serverTimestamp()
-          }
         );
 
-      closeGroupModal();
+    const q =
+        query(
+            conversationsRef,
+            where(
+                "members",
+                "array-contains",
+                currentUser.uid
+            )
+        );
 
-      openConversation({
-        id:
-          conversationRef.id,
+    unsubscribeChats =
+        onSnapshot(
+            q,
+            async snapshot => {
 
-        type:
-          "group",
+                chatList.innerHTML = "";
 
-        name:
-          name,
+                const conversations = [];
 
-        ownerId:
-          currentUser.uid,
+                for (
+                    const conversationDocument
+                    of snapshot.docs
+                ) {
 
-        members:
-          members,
+                    const data =
+                        conversationDocument.data();
 
-        lastMessage:
-          "",
+                    const members =
+                        data.members || [];
 
-        lastMessageAt:
-          null
-      });
+                    const otherUserId =
+                        members.find(
+                            id =>
+                                id !==
+                                currentUser.uid
+                        );
 
-    } catch (error) {
+                    if (!otherUserId) {
+                        continue;
+                    }
 
-      console.error(
-        "ERROR CREANDO GRUPO:",
-        error
-      );
+                    try {
 
-      alert(
-        "No se pudo crear el grupo: " +
-        error.message
-      );
-    }
+                        const otherUserSnapshot =
+                            await getDoc(
+                                doc(
+                                    db,
+                                    "users",
+                                    otherUserId
+                                )
+                            );
 
-    confirmGroupButton.disabled =
-      false;
-  }
-);
+                        if (
+                            !otherUserSnapshot.exists()
+                        ) {
+                            continue;
+                        }
 
+                        const otherUser =
+                            otherUserSnapshot.data();
 
-/* =========================================================
-   ADMIN
-========================================================= */
+                        conversations.push({
+                            id:
+                                conversationDocument.id,
 
-adminButton?.addEventListener(
-  "click",
-  () => {
+                            username:
+                                otherUser.username ||
+                                "Usuario",
 
-    if (!isAdminUser()) {
+                            lastMessage:
+                                data.lastMessage ||
+                                "",
 
-      alert(
-        "No tenés permisos de administrador."
-      );
+                            lastMessageAt:
+                                data.lastMessageAt
+                        });
 
-      return;
-    }
+                    } catch (error) {
 
-    openAdminPanel();
-  }
-);
+                        console.error(
+                            "Error cargando usuario:",
+                            error
+                        );
+                    }
+                }
 
+                conversations.sort(
+                    (a, b) => {
 
-function openAdminPanel() {
+                        if (
+                            !a.lastMessageAt &&
+                            !b.lastMessageAt
+                        ) {
+                            return 0;
+                        }
 
-  if (!isAdminUser()) {
-    return;
-  }
+                        if (!a.lastMessageAt) {
+                            return 1;
+                        }
 
-  adminPanel?.classList.remove(
-    "hidden"
-  );
+                        if (!b.lastMessageAt) {
+                            return -1;
+                        }
 
-  renderAdminUsers();
+                        return (
+                            b.lastMessageAt.toMillis() -
+                            a.lastMessageAt.toMillis()
+                        );
+                    }
+                );
+
+                conversations.forEach(
+                    conversation => {
+
+                        createChatElement(
+                            conversation
+                        );
+                    }
+                );
+            },
+
+            error => {
+
+                console.error(
+                    "Error cargando chats:",
+                    error
+                );
+
+                chatList.innerHTML =
+                    `
+                    <div class="no-results">
+                        Error: ${escapeHtml(error.message)}
+                    </div>
+                    `;
+            }
+        );
 }
 
 
-adminCloseButton?.addEventListener(
-  "click",
-  () => {
+/* =========================
+   ELEMENTO CHAT
+========================= */
 
-    adminPanel?.classList.add(
-      "hidden"
-    );
-  }
-);
+function createChatElement(
+    conversation
+) {
 
-
-/* =========================================================
-   ADMIN - USUARIOS
-========================================================= */
-
-function renderAdminUsers() {
-
-  adminUsers.innerHTML = "";
-
-  const search =
-    adminSearch?.value
-      .trim()
-      .toLowerCase() || "";
-
-  const filtered =
-    allUsers.filter(
-      (user) => {
-
-        if (!search) {
-          return true;
-        }
-
-        return (
-          (user.username || "")
-            .toLowerCase()
-            .includes(search) ||
-
-          (user.email || "")
-            .toLowerCase()
-            .includes(search) ||
-
-          user.uid
-            .toLowerCase()
-            .includes(search)
-        );
-      }
-    );
-
-  if (adminUserCount) {
-
-    adminUserCount.textContent =
-      `${filtered.length} usuarios`;
-  }
-
-  if (filtered.length === 0) {
-
-    adminEmpty?.classList.remove(
-      "hidden"
-    );
-
-    return;
-  }
-
-  adminEmpty?.classList.add(
-    "hidden"
-  );
-
-  filtered.forEach(
-    (user) => {
-
-      const button =
+    const element =
         document.createElement(
-          "button"
+            "div"
         );
 
-      button.className =
-        "admin-user-item";
+    element.className =
+        "chat-item";
 
-      button.innerHTML = `
-        <strong>
-          ${escapeHtml(
-            user.username ||
-            "Usuario"
-          )}
-        </strong>
+    element.innerHTML = `
+        <div class="chat-item-name">
+            ${escapeHtml(conversation.username)}
+        </div>
 
-        <span>
-          ${escapeHtml(
-            user.email || ""
-          )}
-        </span>
-      `;
+        <div class="chat-item-message">
+            ${escapeHtml(conversation.lastMessage)}
+        </div>
+    `;
 
-      button.addEventListener(
+    element.addEventListener(
         "click",
-        () => {
-          selectAdminUser(
-            user
-          );
+        async () => {
+
+            try {
+
+                const conversationSnapshot =
+                    await getDoc(
+                        doc(
+                            db,
+                            "conversations",
+                            conversation.id
+                        )
+                    );
+
+                if (
+                    !conversationSnapshot.exists()
+                ) {
+                    return;
+                }
+
+                const data =
+                    conversationSnapshot.data();
+
+                const otherUserId =
+                    data.members.find(
+                        id =>
+                            id !==
+                            currentUser.uid
+                    );
+
+                currentConversationId =
+                    conversation.id;
+
+                currentOtherUser = {
+                    id:
+                        otherUserId,
+
+                    username:
+                        conversation.username
+                };
+
+                chatTitle.textContent =
+                    conversation.username;
+
+                chatStatus.textContent =
+                    "Chat";
+
+                welcome.classList.add(
+                    "hidden"
+                );
+
+                chatWindow.classList.remove(
+                    "hidden"
+                );
+
+                await loadMessages(
+                    conversation.id
+                );
+
+                messageInput.focus();
+
+            } catch (error) {
+
+                console.error(
+                    "Error abriendo chat:",
+                    error
+                );
+
+                alert(
+                    "Error:\n" +
+                    error.message
+                );
+            }
         }
-      );
-
-      adminUsers.appendChild(
-        button
-      );
-    }
-  );
-}
-
-
-adminSearch?.addEventListener(
-  "input",
-  () => {
-    renderAdminUsers();
-  }
-);
-
-
-/* =========================================================
-   ADMIN - USUARIO
-========================================================= */
-
-async function selectAdminUser(
-  user
-) {
-
-  selectedAdminUser =
-    user;
-
-  adminDetails?.classList.remove(
-    "hidden"
-  );
-
-  adminDetailName.textContent =
-    user.username ||
-    "Usuario";
-
-  adminDetailEmail.textContent =
-    user.email ||
-    "";
-
-  adminDetailUid.textContent =
-    user.uid ||
-    "";
-
-  adminDetailCreated.textContent =
-    formatCreatedDate(
-      user.createdAt
     );
 
-  await loadAdminUserHistory(
-    user
-  );
-}
-
-
-/* =========================================================
-   ADMIN - HISTORIAL
-========================================================= */
-
-async function loadAdminUserHistory(
-  user
-) {
-
-  adminHistory.innerHTML =
-    "<p>Cargando historial...</p>";
-
-  try {
-
-    const conversationsQuery =
-      query(
-        collection(
-          db,
-          "conversations"
-        ),
-        where(
-          "members",
-          "array-contains",
-          user.uid
-        )
-      );
-
-    const snapshot =
-      await getDocs(
-        conversationsQuery
-      );
-
-    const conversations = [];
-
-    snapshot.forEach(
-      (conversationDoc) => {
-
-        conversations.push({
-          id:
-            conversationDoc.id,
-
-          ...conversationDoc.data()
-        });
-      }
-    );
-
-    conversations.sort(
-      (a, b) => {
-
-        const timeA =
-          a.lastMessageAt?.toMillis?.() ||
-          0;
-
-        const timeB =
-          b.lastMessageAt?.toMillis?.() ||
-          0;
-
-        return timeB - timeA;
-      }
-    );
-
-    adminHistory.innerHTML = "";
-
-    if (
-      conversations.length === 0
-    ) {
-
-      adminHistory.innerHTML =
-        "<p>Este usuario no tiene conversaciones.</p>";
-
-      return;
-    }
-
-    for (
-      const conversation
-      of conversations
-    ) {
-
-      await renderAdminConversation(
-        conversation
-      );
-    }
-
-  } catch (error) {
-
-    console.error(
-      "ERROR HISTORIAL ADMIN:",
-      error
-    );
-
-    adminHistory.innerHTML =
-      "<p>No se pudo cargar el historial.</p>";
-  }
-}
-
-
-async function renderAdminConversation(
-  conversation
-) {
-
-  const container =
-    document.createElement(
-      "section"
-    );
-
-  container.className =
-    "admin-conversation";
-
-  let title;
-
-  if (
-    conversation.type ===
-    "group"
-  ) {
-
-    title =
-      conversation.name ||
-      "Grupo";
-
-  } else {
-
-    const otherUid =
-      conversation.members?.find(
-        (uid) =>
-          uid !==
-          selectedAdminUser?.uid
-      );
-
-    title =
-      getUsername(
-        otherUid
-      ) ||
-      "Chat privado";
-  }
-
-  container.innerHTML = `
-    <h3>
-      ${escapeHtml(title)}
-    </h3>
-
-    <div class="admin-message-list">
-      Cargando mensajes...
-    </div>
-  `;
-
-  adminHistory.appendChild(
-    container
-  );
-
-  const messageList =
-    container.querySelector(
-      ".admin-message-list"
-    );
-
-  const messagesQuery =
-    query(
-      collection(
-        db,
-        "conversations",
-        conversation.id,
-        "messages"
-      ),
-      orderBy(
-        "createdAt",
-        "asc"
-      )
-    );
-
-  const snapshot =
-    await getDocs(
-      messagesQuery
-    );
-
-  messageList.innerHTML = "";
-
-  if (snapshot.empty) {
-
-    messageList.innerHTML =
-      "<p>Sin mensajes.</p>";
-
-    return;
-  }
-
-  snapshot.forEach(
-    (messageDoc) => {
-
-      const message =
-        messageDoc.data();
-
-      const sender =
-        message.senderName ||
-        getUsername(
-          message.senderId
-        ) ||
-        "Usuario";
-
-      const element =
-        document.createElement(
-          "div"
-        );
-
-      element.className =
-        "admin-message";
-
-      element.innerHTML = `
-        <div class="admin-message-info">
-
-          <strong>
-            ${escapeHtml(sender)}
-          </strong>
-
-          <span>
-            ${formatDate(
-              message.createdAt
-            )}
-          </span>
-
-        </div>
-
-        <div class="admin-message-content">
-          ${makeLinksClickable(
-            message.content || ""
-          )}
-        </div>
-
-        <button
-          class="admin-delete-message"
-        >
-          Eliminar
-        </button>
-      `;
-
-      element
-        .querySelector(
-          ".admin-delete-message"
-        )
-        ?.addEventListener(
-          "click",
-          async () => {
-
-            await adminDeleteMessage(
-              conversation.id,
-              messageDoc.id
-            );
-
-            await loadAdminUserHistory(
-              selectedAdminUser
-            );
-          }
-        );
-
-      messageList.appendChild(
+    chatList.appendChild(
         element
-      );
-    }
-  );
+    );
 }
 
 
-/* =========================================================
-   ADMIN - BORRAR MENSAJE
-========================================================= */
+/* =========================
+   ESCAPAR HTML
+========================= */
 
-async function adminDeleteMessage(
-  conversationId,
-  messageId
-) {
+function escapeHtml(text) {
 
-  if (!isAdminUser()) {
-    return;
-  }
+    const div =
+        document.createElement(
+            "div"
+        );
 
-  try {
+    div.textContent =
+        text || "";
 
-    const deleteFunction =
-      httpsCallable(
-        functions,
-        "adminDeleteMessage"
-      );
-
-    await deleteFunction({
-      conversationId:
-        conversationId,
-
-      messageId:
-        messageId
-    });
-
-  } catch (error) {
-
-    console.error(
-      "ERROR ADMIN BORRANDO MENSAJE:",
-      error
-    );
-
-    alert(
-      "No se pudo eliminar el mensaje: " +
-      error.message
-    );
-  }
+    return div.innerHTML;
 }
-
-
-/* =========================================================
-   ADMIN - SINCRONIZAR USUARIOS
-========================================================= */
-
-adminSyncButton?.addEventListener(
-  "click",
-  async () => {
-
-    if (!isAdminUser()) {
-      return;
-    }
-
-    adminSyncButton.disabled =
-      true;
-
-    adminSyncStatus.textContent =
-      "Comprobando usuarios...";
-
-    try {
-
-      const syncFunction =
-        httpsCallable(
-          functions,
-          "adminSyncUsers"
-        );
-
-      const result =
-        await syncFunction({});
-
-      const data =
-        result.data;
-
-      adminSyncStatus.textContent =
-        `Authentication: ${data.authUserCount} | ` +
-        `Firestore: ${data.firestoreUserCount} | ` +
-        `Eliminados: ${data.removedCount}`;
-
-      await loadUsers();
-
-      renderAdminUsers();
-
-      if (
-        selectedAdminUser &&
-        data.removedUsers?.some(
-          (user) =>
-            user.uid ===
-            selectedAdminUser.uid
-        )
-      ) {
-
-        selectedAdminUser =
-          null;
-
-        adminDetails?.classList.add(
-          "hidden"
-        );
-
-        adminHistory.innerHTML =
-          "";
-      }
-
-    } catch (error) {
-
-      console.error(
-        "ERROR SINCRONIZANDO:",
-        error
-      );
-
-      adminSyncStatus.textContent =
-        "Error: " +
-        error.message;
-    }
-
-    adminSyncButton.disabled =
-      false;
-  }
-);
-
-
-/* =========================================================
-   LIMPIEZA
-========================================================= */
-
-window.addEventListener(
-  "beforeunload",
-  () => {
-
-    if (
-      currentUser &&
-      selectedConversationId
-    ) {
-
-      setTyping(false);
-    }
-  }
-);
-
-
-/* =========================================================
-   INICIO
-========================================================= */
-
-showLoginForm();
-
-updateCharacterCounter();
