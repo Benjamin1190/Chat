@@ -43,7 +43,7 @@ const db = getFirestore(app);
 
 
 /* =====================================================
-   SUPABASE (solo para guardar las imágenes)
+   SUPABASE
 ===================================================== */
 
 const supabase = createClient(
@@ -56,7 +56,7 @@ const supabase = createClient(
    IMÁGENES
 ===================================================== */
 
-const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5 MB
+const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
 
 let pendingImageFile = null;
 
@@ -85,35 +85,42 @@ let adminUsersCache = [];
    ELEMENTOS
 ===================================================== */
 
-const authScreen = document.getElementById("authScreen");
+const authScreen =
+    document.getElementById("authScreen");
 
-// El contenedor principal de la app en el HTML tiene id="app"
-const appScreen = document.getElementById("app");
+const appScreen =
+    document.getElementById("app");
 
-const loginForm = document.getElementById("loginForm");
-const registerForm = document.getElementById("registerForm");
+const loginForm =
+    document.getElementById("loginForm");
 
-const loginEmail = document.getElementById("loginEmail");
-const loginPassword = document.getElementById("loginPassword");
+const registerForm =
+    document.getElementById("registerForm");
 
-const registerUsername = document.getElementById("registerUsername");
-const registerEmail = document.getElementById("registerEmail");
-const registerPassword = document.getElementById("registerPassword");
+const loginEmail =
+    document.getElementById("loginEmail");
 
-// En el HTML los botones se llaman "showRegister" / "showLogin"
+const loginPassword =
+    document.getElementById("loginPassword");
+
+const registerUsername =
+    document.getElementById("registerUsername");
+
+const registerEmail =
+    document.getElementById("registerEmail");
+
+const registerPassword =
+    document.getElementById("registerPassword");
+
 const showRegisterButton =
     document.getElementById("showRegister");
 
 const showLoginButton =
     document.getElementById("showLogin");
 
-
-// En el HTML el nombre de usuario se muestra en el <strong id="currentUser">
 const currentUsername =
     document.getElementById("currentUser");
 
-// No existe un elemento dedicado al email en el sidebar; se deja en null
-// de forma segura (todo el código que lo usa está protegido con "if").
 const currentEmail =
     document.getElementById("currentEmail");
 
@@ -129,7 +136,6 @@ const searchResults =
 const chatList =
     document.getElementById("chatList");
 
-// En el HTML la pantalla de bienvenida tiene id="welcome"
 const welcomeScreen =
     document.getElementById("welcome");
 
@@ -297,31 +303,37 @@ function showWelcome() {
 
 if (showRegisterButton) {
 
-    showRegisterButton.addEventListener("click", function () {
+    showRegisterButton.addEventListener(
+        "click",
+        function () {
 
-        if (loginForm) {
-            loginForm.classList.add("hidden");
-        }
+            if (loginForm) {
+                loginForm.classList.add("hidden");
+            }
 
-        if (registerForm) {
-            registerForm.classList.remove("hidden");
+            if (registerForm) {
+                registerForm.classList.remove("hidden");
+            }
         }
-    });
+    );
 }
 
 
 if (showLoginButton) {
 
-    showLoginButton.addEventListener("click", function () {
+    showLoginButton.addEventListener(
+        "click",
+        function () {
 
-        if (registerForm) {
-            registerForm.classList.add("hidden");
-        }
+            if (registerForm) {
+                registerForm.classList.add("hidden");
+            }
 
-        if (loginForm) {
-            loginForm.classList.remove("hidden");
+            if (loginForm) {
+                loginForm.classList.remove("hidden");
+            }
         }
-    });
+    );
 }
 
 
@@ -428,17 +440,10 @@ async function register() {
                 account.user.uid
             ),
             {
-                username:
-                    username,
-
-                usernameLower:
-                    usernameLower,
-
-                email:
-                    email,
-
-                createdAt:
-                    serverTimestamp()
+                username: username,
+                usernameLower: usernameLower,
+                email: email,
+                createdAt: serverTimestamp()
             }
         );
 
@@ -448,17 +453,14 @@ async function register() {
         );
 
 
-        creatingAccount = false;
-
-
-        await initializeAuthenticatedUser(
-            account.user
-        );
-
-
         alert(
             "Cuenta creada correctamente."
         );
+
+
+        if (registerForm) {
+            registerForm.reset();
+        }
 
 
     } catch (error) {
@@ -468,12 +470,10 @@ async function register() {
             error
         );
 
-
         console.error(
             "Código:",
             error.code
         );
-
 
         console.error(
             "Mensaje:",
@@ -579,6 +579,81 @@ if (registerForm) {
 
 
 /* =====================================================
+   INICIALIZAR USUARIO AUTENTICADO
+===================================================== */
+
+async function initializeAuthenticatedUser(user) {
+
+    if (!user) {
+        return;
+    }
+
+
+    currentUser = user;
+
+
+    const profileSnapshot =
+        await getDoc(
+            doc(
+                db,
+                "users",
+                user.uid
+            )
+        );
+
+
+    if (!profileSnapshot.exists()) {
+
+        console.error(
+            "No existe users/" +
+            user.uid
+        );
+
+        alert(
+            "Tu cuenta de Firebase existe, pero no se encontró tu perfil en Firestore."
+        );
+
+        return;
+    }
+
+
+    currentProfile =
+        profileSnapshot.data();
+
+
+    if (currentUsername) {
+
+        currentUsername.textContent =
+            "@" +
+            (
+                currentProfile.username ||
+                "usuario"
+            );
+    }
+
+
+    if (currentEmail) {
+
+        currentEmail.textContent =
+            currentProfile.email ||
+            user.email ||
+            "";
+    }
+
+
+    updateAdminButton();
+
+    showAppScreen();
+
+    await loadUsers();
+
+    loadConversations();
+
+    showWelcome();
+}
+
+
+/* =====================================================
    AUTENTICACIÓN
 ===================================================== */
 
@@ -592,8 +667,26 @@ onAuthStateChanged(
                 return;
             }
 
+
             currentUser = null;
             currentProfile = null;
+
+
+            if (messagesUnsubscribe) {
+
+                messagesUnsubscribe();
+
+                messagesUnsubscribe = null;
+            }
+
+
+            if (conversationsUnsubscribe) {
+
+                conversationsUnsubscribe();
+
+                conversationsUnsubscribe = null;
+            }
+
 
             showLoginScreen();
 
@@ -601,62 +694,11 @@ onAuthStateChanged(
         }
 
 
-        currentUser = user;
-
-
         try {
 
-            const profileSnapshot =
-                await getDoc(
-                    doc(
-                        db,
-                        "users",
-                        user.uid
-                    )
-                );
-
-
-            if (!profileSnapshot.exists()) {
-
-                alert(
-                    "Tu cuenta existe, pero no se encontró tu perfil."
-                );
-
-                return;
-            }
-
-
-            currentProfile =
-                profileSnapshot.data();
-
-
-            if (currentUsername) {
-
-                currentUsername.textContent =
-                    "@" +
-                    currentProfile.username;
-            }
-
-
-            if (currentEmail) {
-
-                currentEmail.textContent =
-                    currentProfile.email ||
-                    user.email ||
-                    "";
-            }
-
-
-            updateAdminButton();
-
-            showAppScreen();
-
-            await loadUsers();
-
-            loadConversations();
-
-            showWelcome();
-
+            await initializeAuthenticatedUser(
+                user
+            );
 
         } catch (error) {
 
@@ -664,9 +706,15 @@ onAuthStateChanged(
 
             alert(
                 "Error de Firebase:\n\n" +
-                error.code +
+                (
+                    error.code ||
+                    "Error"
+                ) +
                 "\n\n" +
-                error.message
+                (
+                    error.message ||
+                    ""
+                )
             );
         }
     }
@@ -718,14 +766,20 @@ if (logoutButton) {
             try {
 
                 if (messagesUnsubscribe) {
+
                     messagesUnsubscribe();
+
                     messagesUnsubscribe = null;
                 }
 
+
                 if (conversationsUnsubscribe) {
+
                     conversationsUnsubscribe();
+
                     conversationsUnsubscribe = null;
                 }
+
 
                 await signOut(auth);
 
@@ -757,7 +811,10 @@ async function loadUsers() {
 
         const snapshot =
             await getDocs(
-                collection(db, "users")
+                collection(
+                    db,
+                    "users"
+                )
             );
 
 
@@ -787,11 +844,16 @@ async function loadUsers() {
             function (a, b) {
 
                 return (
-                    (a.username || "")
+                    (
+                        a.username ||
+                        ""
+                    )
                         .toLowerCase()
                         .localeCompare(
-                            (b.username || "")
-                                .toLowerCase()
+                            (
+                                b.username ||
+                                ""
+                            ).toLowerCase()
                         )
                 );
             }
@@ -822,7 +884,10 @@ function showPeople(search) {
 
 
     const text =
-        (search || "")
+        (
+            search ||
+            ""
+        )
             .trim()
             .toLowerCase();
 
@@ -1031,7 +1096,6 @@ async function openUserChat(user) {
             user
         );
 
-
     } catch (error) {
 
         console.error(error);
@@ -1144,12 +1208,15 @@ function openChat(
 
 
     if (welcomeScreen) {
+
         welcomeScreen.classList.add(
             "hidden"
         );
     }
 
+
     if (chatWindow) {
+
         chatWindow.classList.remove(
             "hidden"
         );
@@ -1290,8 +1357,6 @@ function loadMessages(conversationId) {
                 messages.scrollTop =
                     messages.scrollHeight;
             },
-
-
             function (error) {
 
                 console.error(error);
@@ -1503,7 +1568,8 @@ if (imageInput) {
             }
 
 
-            pendingImageFile = file;
+            pendingImageFile =
+                file;
 
 
             if (
@@ -1560,7 +1626,7 @@ function clearPendingImage() {
 
 
 /* =====================================================
-   ENVIAR
+   ENVIAR MENSAJE
 ===================================================== */
 
 async function sendMessage() {
@@ -1578,7 +1644,10 @@ async function sendMessage() {
         messageInput.value.trim();
 
 
-    if (!content && !pendingImageFile) {
+    if (
+        !content &&
+        !pendingImageFile
+    ) {
         return;
     }
 
@@ -1659,14 +1728,21 @@ async function sendMessage() {
 
 
         const messageData = {
-            senderId: currentUser.uid,
-            content: content,
-            createdAt: serverTimestamp()
+            senderId:
+                currentUser.uid,
+
+            content:
+                content,
+
+            createdAt:
+                serverTimestamp()
         };
 
 
         if (imageUrl) {
-            messageData.imageUrl = imageUrl;
+
+            messageData.imageUrl =
+                imageUrl;
         }
 
 
@@ -1695,7 +1771,9 @@ async function sendMessage() {
                             ? "📷 Imagen"
                             : ""
                     ),
-                lastMessageAt: serverTimestamp()
+
+                lastMessageAt:
+                    serverTimestamp()
             },
             {
                 merge: true
@@ -1718,9 +1796,16 @@ async function sendMessage() {
 
         alert(
             "No se pudo enviar el mensaje:\n\n" +
-            (error.code || error.name || "Error") +
+            (
+                error.code ||
+                error.name ||
+                "Error"
+            ) +
             "\n\n" +
-            (error.message || "")
+            (
+                error.message ||
+                ""
+            )
         );
 
     } finally {
@@ -1787,7 +1872,10 @@ function updateCounter() {
 
 function loadConversations() {
 
-    if (!currentUser || !chatList) {
+    if (
+        !currentUser ||
+        !chatList
+    ) {
         return;
     }
 
@@ -1866,7 +1954,8 @@ function loadConversations() {
 
                     const otherUid =
                         (
-                            data.members || []
+                            data.members ||
+                            []
                         ).find(
                             function (uid) {
 
@@ -1914,7 +2003,9 @@ function loadConversations() {
                             ) {
 
                                 user = {
-                                    uid: otherUid,
+                                    uid:
+                                        otherUid,
+
                                     ...userSnapshot.data()
                                 };
                             }
@@ -1940,8 +2031,6 @@ function loadConversations() {
                     );
                 }
             },
-
-
             function (error) {
 
                 console.error(error);
@@ -2379,12 +2468,23 @@ async function createGroup() {
                     "conversations"
                 ),
                 {
-                    members: members,
-                    isGroup: true,
-                    groupName: name,
-                    createdAt: serverTimestamp(),
-                    lastMessage: "",
-                    lastMessageAt: serverTimestamp()
+                    members:
+                        members,
+
+                    isGroup:
+                        true,
+
+                    groupName:
+                        name,
+
+                    createdAt:
+                        serverTimestamp(),
+
+                    lastMessage:
+                        "",
+
+                    lastMessageAt:
+                        serverTimestamp()
                 }
             );
 
@@ -2395,9 +2495,14 @@ async function createGroup() {
         openChat(
             conversation.id,
             {
-                members: members,
-                isGroup: true,
-                groupName: name
+                members:
+                    members,
+
+                isGroup:
+                    true,
+
+                groupName:
+                    name
             },
             null
         );
@@ -2452,6 +2557,7 @@ async function openAdmin() {
 
 
     if (adminDetails) {
+
         adminDetails.classList.add(
             "hidden"
         );
@@ -2533,7 +2639,9 @@ async function loadAdminUsers() {
             function (item) {
 
                 adminUsersCache.push({
-                    uid: item.id,
+                    uid:
+                        item.id,
+
                     ...item.data()
                 });
             }
@@ -2544,7 +2652,10 @@ async function loadAdminUsers() {
             function (a, b) {
 
                 return (
-                    (a.username || "")
+                    (
+                        a.username ||
+                        ""
+                    )
                         .toLowerCase()
                         .localeCompare(
                             (
@@ -2571,6 +2682,7 @@ async function loadAdminUsers() {
     } catch (error) {
 
         console.error(error);
+
 
         if (adminSyncStatus) {
 
@@ -2620,14 +2732,18 @@ function renderAdminUsers() {
                     )
                         .toLowerCase()
                         .includes(search)
+
                     ||
+
                     (
                         user.email ||
                         ""
                     )
                         .toLowerCase()
                         .includes(search)
+
                     ||
+
                     (
                         user.uid ||
                         ""
@@ -2897,8 +3013,8 @@ async function loadAdminHistory(uid) {
 
 
             box.appendChild(title);
-            box.appendChild(last);
 
+            box.appendChild(last);
 
             adminHistory.appendChild(
                 box
@@ -2917,7 +3033,7 @@ async function loadAdminHistory(uid) {
 
 
 /* =====================================================
-   FIN
+   INICIO
 ===================================================== */
 
 updateCounter();
