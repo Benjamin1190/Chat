@@ -24,16 +24,17 @@ import {
     serverTimestamp
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
+import {
+    createClient
+} from "https://esm.sh/@supabase/supabase-js@2.45.4";
 
-const firebaseConfig = {
-    apiKey: "AIzaSyAQkoJ1NZ05MSHAkP2JXQlNkhg14uIulps",
-    authDomain: "chat-44405.firebaseapp.com",
-    projectId: "chat-44405",
-    storageBucket: "chat-44405.firebasestorage.app",
-    messagingSenderId: "239453189829",
-    appId: "1:239453189829:web:3fa427b9f8cacae74422ac",
-    measurementId: "G-TSJWY9EVS7"
-};
+import {
+    firebaseConfig,
+    ADMIN_USERNAME,
+    SUPABASE_URL,
+    SUPABASE_ANON_KEY,
+    SUPABASE_BUCKET
+} from "./config.js";
 
 
 const app = initializeApp(firebaseConfig);
@@ -42,10 +43,22 @@ const db = getFirestore(app);
 
 
 /* =====================================================
-   ADMIN
+   SUPABASE (solo para guardar las imágenes)
 ===================================================== */
 
-const ADMIN_USERNAME = "minibenja2016";
+const supabase = createClient(
+    SUPABASE_URL,
+    SUPABASE_ANON_KEY
+);
+
+
+/* =====================================================
+   IMÁGENES
+===================================================== */
+
+const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5 MB
+
+let pendingImageFile = null;
 
 
 /* =====================================================
@@ -143,6 +156,21 @@ const sendButton =
 
 const deleteChatButton =
     document.getElementById("deleteChatButton");
+
+const attachButton =
+    document.getElementById("attachButton");
+
+const imageInput =
+    document.getElementById("imageInput");
+
+const imagePreview =
+    document.getElementById("imagePreview");
+
+const imagePreviewThumb =
+    document.getElementById("imagePreviewThumb");
+
+const removeImageButton =
+    document.getElementById("removeImageButton");
 
 
 /* =====================================================
@@ -1266,8 +1294,58 @@ function showMessage(data) {
     bubble.className =
         "message-bubble";
 
-    bubble.textContent =
-        data.content || "";
+
+    if (data.imageUrl) {
+
+        const image =
+            document.createElement("img");
+
+        image.className =
+            "message-image";
+
+        image.src =
+            data.imageUrl;
+
+        image.alt =
+            "Imagen enviada";
+
+        image.loading =
+            "lazy";
+
+
+        image.addEventListener(
+            "click",
+            function () {
+
+                window.open(
+                    data.imageUrl,
+                    "_blank"
+                );
+            }
+        );
+
+
+        bubble.appendChild(
+            image
+        );
+    }
+
+
+    if (data.content) {
+
+        const text =
+            document.createElement("div");
+
+        text.className =
+            "message-text";
+
+        text.textContent =
+            data.content;
+
+        bubble.appendChild(
+            text
+        );
+    }
 
 
     const time =
@@ -1311,6 +1389,127 @@ function showMessage(data) {
 
 
 /* =====================================================
+   SELECCIONAR IMAGEN
+===================================================== */
+
+if (attachButton) {
+
+    attachButton.addEventListener(
+        "click",
+        function () {
+
+            if (imageInput) {
+                imageInput.click();
+            }
+        }
+    );
+}
+
+
+if (imageInput) {
+
+    imageInput.addEventListener(
+        "change",
+        function () {
+
+            const file =
+                imageInput.files &&
+                imageInput.files[0];
+
+
+            if (!file) {
+                return;
+            }
+
+
+            if (
+                !file.type.startsWith(
+                    "image/"
+                )
+            ) {
+
+                alert(
+                    "Elegí un archivo de imagen válido."
+                );
+
+                imageInput.value = "";
+
+                return;
+            }
+
+
+            if (
+                file.size >
+                MAX_IMAGE_SIZE
+            ) {
+
+                alert(
+                    "La imagen no puede pesar más de 5 MB."
+                );
+
+                imageInput.value = "";
+
+                return;
+            }
+
+
+            pendingImageFile = file;
+
+
+            if (
+                imagePreview &&
+                imagePreviewThumb
+            ) {
+
+                imagePreviewThumb.src =
+                    URL.createObjectURL(
+                        file
+                    );
+
+                imagePreview.classList.remove(
+                    "hidden"
+                );
+            }
+        }
+    );
+}
+
+
+if (removeImageButton) {
+
+    removeImageButton.addEventListener(
+        "click",
+        clearPendingImage
+    );
+}
+
+
+function clearPendingImage() {
+
+    pendingImageFile = null;
+
+
+    if (imageInput) {
+        imageInput.value = "";
+    }
+
+
+    if (imagePreview) {
+
+        imagePreview.classList.add(
+            "hidden"
+        );
+    }
+
+
+    if (imagePreviewThumb) {
+
+        imagePreviewThumb.src = "";
+    }
+}
+
+
+/* =====================================================
    ENVIAR
 ===================================================== */
 
@@ -1329,7 +1528,7 @@ async function sendMessage() {
         messageInput.value.trim();
 
 
-    if (!content) {
+    if (!content && !pendingImageFile) {
         return;
     }
 
@@ -1351,6 +1550,76 @@ async function sendMessage() {
 
     try {
 
+        let imageUrl = null;
+
+
+        if (pendingImageFile) {
+
+            const safeName =
+                pendingImageFile.name.replace(
+                    /[^a-zA-Z0-9.\-_]/g,
+                    "_"
+                );
+
+
+            const path =
+                currentConversationId +
+                "/" +
+                Date.now() +
+                "_" +
+                safeName;
+
+
+            const uploadResult =
+                await supabase
+                    .storage
+                    .from(
+                        SUPABASE_BUCKET
+                    )
+                    .upload(
+                        path,
+                        pendingImageFile,
+                        {
+                            cacheControl: "3600",
+                            upsert: false
+                        }
+                    );
+
+
+            if (uploadResult.error) {
+
+                throw uploadResult.error;
+            }
+
+
+            const publicUrlResult =
+                supabase
+                    .storage
+                    .from(
+                        SUPABASE_BUCKET
+                    )
+                    .getPublicUrl(
+                        path
+                    );
+
+
+            imageUrl =
+                publicUrlResult.data.publicUrl;
+        }
+
+
+        const messageData = {
+            senderId: currentUser.uid,
+            content: content,
+            createdAt: serverTimestamp()
+        };
+
+
+        if (imageUrl) {
+            messageData.imageUrl = imageUrl;
+        }
+
+
         await addDoc(
             collection(
                 db,
@@ -1358,11 +1627,7 @@ async function sendMessage() {
                 currentConversationId,
                 "messages"
             ),
-            {
-                senderId: currentUser.uid,
-                content: content,
-                createdAt: serverTimestamp()
-            }
+            messageData
         );
 
 
@@ -1373,7 +1638,13 @@ async function sendMessage() {
                 currentConversationId
             ),
             {
-                lastMessage: content,
+                lastMessage:
+                    content ||
+                    (
+                        imageUrl
+                            ? "📷 Imagen"
+                            : ""
+                    ),
                 lastMessageAt: serverTimestamp()
             },
             {
@@ -1383,6 +1654,8 @@ async function sendMessage() {
 
 
         messageInput.value = "";
+
+        clearPendingImage();
 
         updateCounter();
 
@@ -1395,9 +1668,9 @@ async function sendMessage() {
 
         alert(
             "No se pudo enviar el mensaje:\n\n" +
-            error.code +
+            (error.code || error.name || "Error") +
             "\n\n" +
-            error.message
+            (error.message || "")
         );
 
     } finally {
