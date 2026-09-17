@@ -1,4 +1,5 @@
-const SUPABASE_URL = "https://snmgcfejfeqiheimoyna.supabase.co";
+const SUPABASE_URL =
+    "https://snmgcfejfeqiheimoyna.supabase.co";
 
 const SUPABASE_KEY =
     "sb_publishable_J457xhtv1ST-TrStmuvnqQ_Fi6OTtN5";
@@ -17,20 +18,26 @@ let realtimeChannel = null;
 
 /* ELEMENTOS */
 
-const authScreen = document.getElementById("authScreen");
-const app = document.getElementById("app");
+const authScreen =
+    document.getElementById("authScreen");
 
-const loginForm = document.getElementById("loginForm");
-const registerForm = document.getElementById("registerForm");
+const app =
+    document.getElementById("app");
 
-const loginEmail = document.getElementById("loginEmail");
-const loginPassword = document.getElementById("loginPassword");
+const loginForm =
+    document.getElementById("loginForm");
+
+const registerForm =
+    document.getElementById("registerForm");
+
+const loginUsername =
+    document.getElementById("loginUsername");
+
+const loginPassword =
+    document.getElementById("loginPassword");
 
 const registerUsername =
     document.getElementById("registerUsername");
-
-const registerEmail =
-    document.getElementById("registerEmail");
 
 const registerPassword =
     document.getElementById("registerPassword");
@@ -78,18 +85,39 @@ const logoutButton =
     document.getElementById("logoutButton");
 
 
+/* EMAIL INTERNO */
+
+function makeInternalEmail(username) {
+
+    return username
+        .trim()
+        .toLowerCase() +
+        "@chat.local";
+
+}
+
+
 /* CAMBIAR LOGIN / REGISTRO */
 
 document.getElementById("showRegister").onclick = () => {
+
     loginForm.classList.add("hidden");
+
     registerForm.classList.remove("hidden");
+
     authMessage.textContent = "";
+
 };
 
+
 document.getElementById("showLogin").onclick = () => {
+
     registerForm.classList.add("hidden");
+
     loginForm.classList.remove("hidden");
+
     authMessage.textContent = "";
+
 };
 
 
@@ -99,66 +127,126 @@ document.getElementById("registerButton").onclick =
 async () => {
 
     const username =
-        registerUsername.value.trim();
-
-    const email =
-        registerEmail.value.trim();
+        registerUsername.value
+            .trim()
+            .toLowerCase();
 
     const password =
         registerPassword.value;
 
-    if (!username || !email || !password) {
+
+    if (!username || !password) {
+
         authMessage.textContent =
             "Completa todos los campos.";
+
         return;
+
     }
 
+
+    if (!/^[a-z0-9_]{3,20}$/.test(username)) {
+
+        authMessage.textContent =
+            "El usuario debe tener 3-20 caracteres y solo puede usar letras, números y _.";
+
+        return;
+
+    }
+
+
     if (password.length < 6) {
+
         authMessage.textContent =
             "La contraseña debe tener al menos 6 caracteres.";
+
         return;
+
     }
+
 
     authMessage.textContent =
         "Creando cuenta...";
+
+
+    const internalEmail =
+        makeInternalEmail(username);
+
 
     const {
         data,
         error
     } = await supabaseClient.auth.signUp({
-        email,
-        password
+
+        email: internalEmail,
+
+        password: password
+
     });
 
+
     if (error) {
-        authMessage.textContent =
-            error.message;
+
+        if (
+            error.message
+                .toLowerCase()
+                .includes("already registered")
+        ) {
+
+            authMessage.textContent =
+                "Ese nombre de usuario ya está registrado.";
+
+        } else {
+
+            authMessage.textContent =
+                error.message;
+
+        }
+
         return;
+
     }
 
+
     if (!data.user) {
+
         authMessage.textContent =
             "No se pudo crear el usuario.";
+
         return;
+
     }
+
 
     const {
         error: profileError
     } = await supabaseClient
         .from("profiles")
         .insert({
+
             id: data.user.id,
+
             username: username
+
         });
 
+
     if (profileError) {
+
         authMessage.textContent =
             profileError.message;
+
         return;
+
     }
 
-    authMessage.textContent =
-        "Cuenta creada. Revisa tu correo si Supabase pide confirmación.";
+
+    currentUser =
+        data.user;
+
+
+    await startApp();
+
 };
 
 
@@ -167,38 +255,61 @@ async () => {
 document.getElementById("loginButton").onclick =
 async () => {
 
-    const email =
-        loginEmail.value.trim();
+    const username =
+        loginUsername.value
+            .trim()
+            .toLowerCase();
 
     const password =
         loginPassword.value;
 
-    if (!email || !password) {
+
+    if (!username || !password) {
+
         authMessage.textContent =
-            "Completa el correo y la contraseña.";
+            "Completa todos los campos.";
+
         return;
+
     }
+
 
     authMessage.textContent =
         "Iniciando sesión...";
+
+
+    const internalEmail =
+        makeInternalEmail(username);
+
 
     const {
         data,
         error
     } = await supabaseClient.auth.signInWithPassword({
-        email,
-        password
+
+        email: internalEmail,
+
+        password: password
+
     });
 
+
     if (error) {
+
         authMessage.textContent =
-            error.message;
+            "Usuario o contraseña incorrectos.";
+
         return;
+
     }
 
-    currentUser = data.user;
+
+    currentUser =
+        data.user;
+
 
     await startApp();
+
 };
 
 
@@ -209,6 +320,7 @@ async function checkSession() {
     const {
         data
     } = await supabaseClient.auth.getSession();
+
 
     if (data.session) {
 
@@ -222,6 +334,7 @@ async function checkSession() {
         showLogin();
 
     }
+
 }
 
 
@@ -230,6 +343,7 @@ async function checkSession() {
 function showLogin() {
 
     authScreen.classList.remove("hidden");
+
     app.classList.add("hidden");
 
 }
@@ -240,7 +354,9 @@ function showLogin() {
 async function startApp() {
 
     authScreen.classList.add("hidden");
+
     app.classList.remove("hidden");
+
 
     const {
         data
@@ -250,10 +366,14 @@ async function startApp() {
         .eq("id", currentUser.id)
         .single();
 
+
     if (data) {
+
         currentUserElement.textContent =
             "@" + data.username;
+
     }
+
 
     await loadChats();
 
@@ -268,9 +388,11 @@ async () => {
     await supabaseClient.auth.signOut();
 
     currentUser = null;
+
     currentConversation = null;
 
     showLogin();
+
 };
 
 
@@ -278,16 +400,21 @@ async () => {
 
 let searchTimer;
 
-userSearch.addEventListener("input", () => {
 
-    clearTimeout(searchTimer);
+userSearch.addEventListener(
+    "input",
+    () => {
 
-    searchTimer = setTimeout(
-        searchUsers,
-        300
-    );
+        clearTimeout(searchTimer);
 
-});
+        searchTimer =
+            setTimeout(
+                searchUsers,
+                300
+            );
+
+    }
+);
 
 
 async function searchUsers() {
@@ -295,9 +422,12 @@ async function searchUsers() {
     const text =
         userSearch.value.trim();
 
+
     searchResults.innerHTML = "";
 
+
     if (!text) return;
+
 
     const {
         data,
@@ -305,43 +435,69 @@ async function searchUsers() {
     } = await supabaseClient
         .from("profiles")
         .select("id, username")
-        .ilike("username", `%${text}%`)
-        .neq("id", currentUser.id)
+        .ilike(
+            "username",
+            `%${text}%`
+        )
+        .neq(
+            "id",
+            currentUser.id
+        )
         .limit(10);
 
+
     if (error) {
+
         console.error(error);
+
         return;
+
     }
+
 
     data.forEach(user => {
 
         const element =
             document.createElement("div");
 
+
         element.className =
             "search-user";
 
+
         element.innerHTML = `
+
             <div class="avatar">
-                ${escapeHtml(user.username[0].toUpperCase())}
+                ${escapeHtml(
+                    user.username[0]
+                        .toUpperCase()
+                )}
             </div>
 
             <div>
+
                 <div class="user-name">
-                    ${escapeHtml(user.username)}
+                    ${escapeHtml(
+                        user.username
+                    )}
                 </div>
 
                 <div class="user-subtitle">
                     Crear chat
                 </div>
+
             </div>
+
         `;
+
 
         element.onclick =
             () => createPrivateChat(user);
 
-        searchResults.appendChild(element);
+
+        searchResults.appendChild(
+            element
+        );
 
     });
 
@@ -358,17 +514,26 @@ async function createPrivateChat(user) {
     } = await supabaseClient
         .from("conversation_members")
         .select("conversation_id")
-        .eq("user_id", currentUser.id);
+        .eq(
+            "user_id",
+            currentUser.id
+        );
+
 
     if (error) {
+
         alert(error.message);
+
         return;
+
     }
+
 
     const ids =
         myMemberships.map(
             x => x.conversation_id
         );
+
 
     if (ids.length) {
 
@@ -376,26 +541,42 @@ async function createPrivateChat(user) {
             data: possibleChats
         } = await supabaseClient
             .from("conversation_members")
-            .select("conversation_id, user_id")
-            .in("conversation_id", ids)
-            .eq("user_id", user.id);
+            .select(
+                "conversation_id, user_id"
+            )
+            .in(
+                "conversation_id",
+                ids
+            )
+            .eq(
+                "user_id",
+                user.id
+            );
+
 
         if (possibleChats?.length) {
 
             const conversationId =
-                possibleChats[0].conversation_id;
+                possibleChats[0]
+                    .conversation_id;
+
 
             await openConversation(
                 conversationId,
                 user.username
             );
 
+
             userSearch.value = "";
+
             searchResults.innerHTML = "";
 
             return;
+
         }
+
     }
+
 
     const {
         data: conversation,
@@ -403,46 +584,77 @@ async function createPrivateChat(user) {
     } = await supabaseClient
         .from("conversations")
         .insert({
+
             is_group: false,
-            created_by: currentUser.id
+
+            created_by:
+                currentUser.id
+
         })
         .select()
         .single();
 
+
     if (conversationError) {
-        alert(conversationError.message);
+
+        alert(
+            conversationError.message
+        );
+
         return;
+
     }
+
 
     const {
         error: memberError
     } = await supabaseClient
         .from("conversation_members")
         .insert([
+
             {
-                conversation_id: conversation.id,
-                user_id: currentUser.id
+                conversation_id:
+                    conversation.id,
+
+                user_id:
+                    currentUser.id
             },
+
             {
-                conversation_id: conversation.id,
-                user_id: user.id
+                conversation_id:
+                    conversation.id,
+
+                user_id:
+                    user.id
             }
+
         ]);
 
+
     if (memberError) {
-        alert(memberError.message);
+
+        alert(
+            memberError.message
+        );
+
         return;
+
     }
+
 
     await openConversation(
         conversation.id,
         user.username
     );
 
+
     userSearch.value = "";
+
     searchResults.innerHTML = "";
 
+
     await loadChats();
+
 }
 
 
@@ -452,35 +664,53 @@ async function loadChats() {
 
     chatList.innerHTML = "";
 
+
     const {
         data: memberships,
         error
     } = await supabaseClient
         .from("conversation_members")
         .select("conversation_id")
-        .eq("user_id", currentUser.id);
+        .eq(
+            "user_id",
+            currentUser.id
+        );
+
 
     if (error) {
+
         console.error(error);
+
         return;
+
     }
 
-    for (const membership of memberships) {
+
+    for (
+        const membership of memberships
+    ) {
 
         const conversationId =
             membership.conversation_id;
+
 
         const {
             data: conversation
         } = await supabaseClient
             .from("conversations")
             .select("*")
-            .eq("id", conversationId)
+            .eq(
+                "id",
+                conversationId
+            )
             .single();
+
 
         if (!conversation) continue;
 
+
         let title = "Grupo";
+
 
         if (!conversation.is_group) {
 
@@ -489,8 +719,15 @@ async function loadChats() {
             } = await supabaseClient
                 .from("conversation_members")
                 .select("user_id")
-                .eq("conversation_id", conversationId)
-                .neq("user_id", currentUser.id);
+                .eq(
+                    "conversation_id",
+                    conversationId
+                )
+                .neq(
+                    "user_id",
+                    currentUser.id
+                );
+
 
             if (otherMembers?.length) {
 
@@ -501,13 +738,19 @@ async function loadChats() {
                     .select("username")
                     .eq(
                         "id",
-                        otherMembers[0].user_id
+                        otherMembers[0]
+                            .user_id
                     )
                     .single();
 
+
                 if (profile) {
-                    title = profile.username;
+
+                    title =
+                        profile.username;
+
                 }
+
             }
 
         } else {
@@ -518,18 +761,26 @@ async function loadChats() {
 
         }
 
+
         const item =
             document.createElement("div");
+
 
         item.className =
             "chat-item";
 
+
         item.innerHTML = `
+
             <div class="avatar">
-                ${escapeHtml(title[0].toUpperCase())}
+                ${escapeHtml(
+                    title[0]
+                        .toUpperCase()
+                )}
             </div>
 
             <div>
+
                 <div class="user-name">
                     ${escapeHtml(title)}
                 </div>
@@ -537,8 +788,11 @@ async function loadChats() {
                 <div class="user-subtitle">
                     Abrir conversación
                 </div>
+
             </div>
+
         `;
+
 
         item.onclick =
             () => openConversation(
@@ -546,8 +800,11 @@ async function loadChats() {
                 title
             );
 
+
         chatList.appendChild(item);
+
     }
+
 }
 
 
@@ -561,19 +818,32 @@ async function openConversation(
     currentConversation =
         conversationId;
 
-    welcome.classList.add("hidden");
-    chatWindow.classList.remove("hidden");
+
+    welcome.classList.add(
+        "hidden"
+    );
+
+
+    chatWindow.classList.remove(
+        "hidden"
+    );
+
 
     chatTitle.textContent =
         title;
 
+
     messages.innerHTML = "";
+
 
     await loadMessages();
 
+
     subscribeMessages();
 
+
     messageInput.focus();
+
 }
 
 
@@ -591,47 +861,76 @@ async function loadMessages() {
             "conversation_id",
             currentConversation
         )
-        .order("created_at", {
-            ascending: true
-        });
+        .order(
+            "created_at",
+            {
+                ascending: true
+            }
+        );
+
 
     if (error) {
+
         console.error(error);
+
         return;
+
     }
+
 
     messages.innerHTML = "";
 
+
     for (const message of data) {
 
-        await renderMessage(message);
+        await renderMessage(
+            message
+        );
 
     }
 
+
     scrollMessages();
+
 }
 
 
-/* RENDER MENSAJE */
+/* MOSTRAR MENSAJE */
 
 async function renderMessage(message) {
 
     const element =
         document.createElement("div");
 
+
     element.className =
         "message";
 
-    if (message.sender_id === currentUser.id) {
-        element.classList.add("mine");
+
+    if (
+        message.sender_id ===
+        currentUser.id
+    ) {
+
+        element.classList.add(
+            "mine"
+        );
+
     }
+
 
     let content = "";
 
+
     if (message.content) {
+
         content +=
-            `<div>${escapeHtml(message.content)}</div>`;
+            `<div>${escapeHtml(
+                message.content
+            )}</div>`;
+
     }
+
 
     if (message.image_path) {
 
@@ -645,20 +944,28 @@ async function renderMessage(message) {
                 3600
             );
 
+
         if (data?.signedUrl) {
 
             content += `
+
                 <img
                     src="${data.signedUrl}"
                     alt="Imagen enviada"
                 >
+
             `;
 
         }
+
     }
 
+
     const date =
-        new Date(message.created_at);
+        new Date(
+            message.created_at
+        );
+
 
     const time =
         date.toLocaleTimeString(
@@ -669,16 +976,24 @@ async function renderMessage(message) {
             }
         );
 
+
     content += `
+
         <div class="message-time">
             ${time}
         </div>
+
     `;
+
 
     element.innerHTML =
         content;
 
-    messages.appendChild(element);
+
+    messages.appendChild(
+        element
+    );
+
 }
 
 
@@ -689,16 +1004,26 @@ async function sendMessage() {
     const text =
         messageInput.value.trim();
 
-    if (!text || !currentConversation)
+
+    if (
+        !text ||
+        !currentConversation
+    ) {
+
         return;
 
+    }
+
+
     messageInput.value = "";
+
 
     const {
         error
     } = await supabaseClient
         .from("messages")
         .insert({
+
             conversation_id:
                 currentConversation,
 
@@ -707,7 +1032,9 @@ async function sendMessage() {
 
             content:
                 text
+
         });
+
 
     if (error) {
 
@@ -717,7 +1044,9 @@ async function sendMessage() {
 
         messageInput.value =
             text;
+
     }
+
 }
 
 
@@ -753,46 +1082,88 @@ async () => {
     const file =
         imageInput.files[0];
 
-    if (!file || !currentConversation)
+
+    if (
+        !file ||
+        !currentConversation
+    ) {
+
         return;
 
-    if (!file.type.startsWith("image/")) {
-        alert("Solo puedes enviar imágenes.");
-        return;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-        alert("La imagen no puede superar 5 MB.");
+
+    if (
+        !file.type.startsWith(
+            "image/"
+        )
+    ) {
+
+        alert(
+            "Solo puedes enviar imágenes."
+        );
+
         return;
+
     }
+
+
+    if (
+        file.size >
+        5 * 1024 * 1024
+    ) {
+
+        alert(
+            "La imagen no puede superar 5 MB."
+        );
+
+        return;
+
+    }
+
 
     const extension =
-        file.name.split(".").pop();
+        file.name
+            .split(".")
+            .pop();
+
 
     const path =
         `${currentConversation}/${crypto.randomUUID()}.${extension}`;
+
 
     const {
         error: uploadError
     } = await supabaseClient
         .storage
         .from("chat-images")
-        .upload(path, file);
+        .upload(
+            path,
+            file
+        );
+
 
     if (uploadError) {
 
-        console.error(uploadError);
+        console.error(
+            uploadError
+        );
 
-        alert(uploadError.message);
+        alert(
+            uploadError.message
+        );
 
         return;
+
     }
+
 
     const {
         error
     } = await supabaseClient
         .from("messages")
         .insert({
+
             conversation_id:
                 currentConversation,
 
@@ -801,7 +1172,9 @@ async () => {
 
             image_path:
                 path
+
         });
+
 
     if (error) {
 
@@ -811,7 +1184,9 @@ async () => {
 
     }
 
+
     imageInput.value = "";
+
 };
 
 
@@ -821,12 +1196,12 @@ function subscribeMessages() {
 
     if (realtimeChannel) {
 
-        supabaseClient
-            .removeChannel(
-                realtimeChannel
-            );
+        supabaseClient.removeChannel(
+            realtimeChannel
+        );
 
     }
+
 
     realtimeChannel =
         supabaseClient
@@ -868,26 +1243,47 @@ function scrollMessages() {
 }
 
 
-/* SEGURIDAD HTML */
+/* PROTEGER HTML */
 
 function escapeHtml(value) {
 
     return String(value)
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
+        .replaceAll(
+            "&",
+            "&amp;"
+        )
+        .replaceAll(
+            "<",
+            "&lt;"
+        )
+        .replaceAll(
+            ">",
+            "&gt;"
+        )
+        .replaceAll(
+            '"',
+            "&quot;"
+        )
+        .replaceAll(
+            "'",
+            "&#039;"
+        );
 
 }
 
 
-/* ARRANCAR */
+/* AUTENTICACIÓN */
 
 supabaseClient.auth.onAuthStateChange(
-    async (event, session) => {
+    async (
+        event,
+        session
+    ) => {
 
-        if (session && !currentUser) {
+        if (
+            session &&
+            !currentUser
+        ) {
 
             currentUser =
                 session.user;
@@ -895,6 +1291,7 @@ supabaseClient.auth.onAuthStateChange(
             await startApp();
 
         }
+
 
         if (!session) {
 
@@ -907,5 +1304,7 @@ supabaseClient.auth.onAuthStateChange(
     }
 );
 
+
+/* INICIAR */
 
 checkSession();
