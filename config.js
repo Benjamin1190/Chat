@@ -24,11 +24,11 @@ export const firebaseConfig = {
     measurementId: "G-TSJWY9EVS7"
 };
 
-export const ADMIN_USERNAME = "minibenja2016";
+export const ADMIN_USERNAME = "benja";
 
 // Project Settings -> API -> "Project URL" y "anon public" key
-export const SUPABASE_URL = "https://TU-PROYECTO.supabase.co";
-export const SUPABASE_ANON_KEY = "TU-ANON-KEY-PUBLICA";
+export const SUPABASE_URL = "https://snmgcfejfeqiheimoyna.supabase.co";
+export const SUPABASE_ANON_KEY = "sb_publishable_J457xhtv1ST-TrStmuvnqQ_Fi6OTtN5";
 
 // Nombre del bucket creado en Supabase (Storage -> New bucket)
 export const SUPABASE_BUCKET = "chat-images";
