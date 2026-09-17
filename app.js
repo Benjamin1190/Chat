@@ -51,15 +51,11 @@ const db = getFirestore(firebaseApp);
    ========================================================= */
 
 let currentUser = null;
-
 let currentProfile = null;
-
 let currentConversationId = null;
-
 let currentOtherUser = null;
 
 let unsubscribeMessages = null;
-
 let unsubscribeConversations = null;
 
 
@@ -165,7 +161,7 @@ const sendButton =
 
 
 /* =========================================================
-   CAMBIAR LOGIN / REGISTRO
+   CAMBIAR ENTRE LOGIN Y REGISTRO
    ========================================================= */
 
 showRegister.addEventListener("click", function () {
@@ -212,10 +208,13 @@ function showAuthMessage(message, error = false) {
 
 
 /* =========================================================
-   REGISTRAR CUENTA
+   REGISTRO
    ========================================================= */
 
-registerButton.addEventListener("click", register);
+registerButton.addEventListener(
+    "click",
+    register
+);
 
 
 async function register() {
@@ -294,40 +293,9 @@ async function register() {
 
     try {
 
-        const usernameLower =
-            username.toLowerCase();
-
-
-        /* COMPROBAR SI EL USUARIO EXISTE */
-
-        const usernameQuery = query(
-            collection(db, "users"),
-            where(
-                "usernameLower",
-                "==",
-                usernameLower
-            )
-        );
-
-
-        const usernameSnapshot =
-            await getDocs(usernameQuery);
-
-
-        if (!usernameSnapshot.empty) {
-
-            showAuthMessage(
-                "Ese nombre de usuario ya está ocupado.",
-                true
-            );
-
-            registerButton.disabled = false;
-
-            return;
-        }
-
-
-        /* CREAR CUENTA EN FIREBASE AUTH */
+        /*
+         * 1. CREAR LA CUENTA EN FIREBASE AUTH
+         */
 
         const userCredential =
             await createUserWithEmailAndPassword(
@@ -341,32 +309,92 @@ async function register() {
             userCredential.user;
 
 
-        /* CREAR PERFIL EN FIRESTORE */
+        /*
+         * 2. EL USUARIO YA ESTÁ AUTENTICADO
+         */
+
+        const usernameLower =
+            username.toLowerCase();
+
+
+        /*
+         * 3. COMPROBAR SI EL USUARIO YA EXISTE
+         */
+
+        const usernameQuery =
+            query(
+                collection(
+                    db,
+                    "users"
+                ),
+                where(
+                    "usernameLower",
+                    "==",
+                    usernameLower
+                )
+            );
+
+
+        const usernameSnapshot =
+            await getDocs(
+                usernameQuery
+            );
+
+
+        if (!usernameSnapshot.empty) {
+
+            showAuthMessage(
+                "Ese nombre de usuario ya está ocupado.",
+                true
+            );
+
+            await signOut(auth);
+
+            return;
+        }
+
+
+        /*
+         * 4. CREAR PERFIL EN FIRESTORE
+         */
 
         await setDoc(
-            doc(db, "users", user.uid),
+
+            doc(
+                db,
+                "users",
+                user.uid
+            ),
+
             {
                 username: username,
 
-                usernameLower: usernameLower,
+                usernameLower:
+                    usernameLower,
 
                 email: email,
 
-                createdAt: serverTimestamp()
+                createdAt:
+                    serverTimestamp()
             }
+
         );
 
 
-        showAuthMessage(
-            "Cuenta creada correctamente."
-        );
-
+        /*
+         * 5. LIMPIAR FORMULARIO
+         */
 
         registerEmail.value = "";
 
         registerUsername.value = "";
 
         registerPassword.value = "";
+
+
+        showAuthMessage(
+            "Cuenta creada correctamente."
+        );
 
 
     } catch (error) {
@@ -376,12 +404,10 @@ async function register() {
             error
         );
 
-
         console.error(
             "CÓDIGO:",
             error.code
         );
-
 
         console.error(
             "MENSAJE:",
@@ -403,7 +429,6 @@ async function register() {
 
         }
 
-
         else if (
             error.code ===
             "auth/invalid-email"
@@ -414,17 +439,15 @@ async function register() {
 
         }
 
-
         else if (
             error.code ===
             "auth/weak-password"
         ) {
 
             message =
-                "La contraseña es demasiado débil.";
+                "La contraseña debe tener al menos 6 caracteres.";
 
         }
-
 
         else if (
             error.code ===
@@ -432,10 +455,9 @@ async function register() {
         ) {
 
             message =
-                "El inicio de sesión con correo y contraseña no está activado en Firebase.";
+                "Correo y contraseña no están activados en Firebase.";
 
         }
-
 
         else if (
             error.code ===
@@ -443,10 +465,9 @@ async function register() {
         ) {
 
             message =
-                "Firebase rechazó el acceso a Firestore. Hay que revisar las reglas.";
+                "Firebase rechazó el acceso a Firestore.";
 
         }
-
 
         else {
 
@@ -506,7 +527,6 @@ async function login() {
 
     loginButton.disabled = true;
 
-
     showAuthMessage(
         "Iniciando sesión..."
     );
@@ -523,7 +543,10 @@ async function login() {
 
     } catch (error) {
 
-        console.error(error);
+        console.error(
+            "ERROR LOGIN:",
+            error
+        );
 
 
         let message =
@@ -568,7 +591,18 @@ logoutButton.addEventListener(
     "click",
     async function () {
 
-        await signOut(auth);
+        try {
+
+            await signOut(auth);
+
+        } catch (error) {
+
+            console.error(
+                "Error cerrando sesión:",
+                error
+            );
+
+        }
 
     }
 );
@@ -594,7 +628,6 @@ onAuthStateChanged(
             authScreen.classList.remove(
                 "hidden"
             );
-
 
             appScreen.classList.add(
                 "hidden"
@@ -645,7 +678,7 @@ onAuthStateChanged(
             if (!profileSnapshot.exists()) {
 
                 console.error(
-                    "No existe el perfil del usuario."
+                    "El usuario no tiene perfil en Firestore."
                 );
 
                 await signOut(auth);
@@ -683,7 +716,9 @@ onAuthStateChanged(
                 error
             );
 
+
             showAuthMessage(
+                "Error cargando tu perfil: " +
                 error.message,
                 true
             );
@@ -794,7 +829,6 @@ async function searchUsers() {
                             userSearch.value =
                                 "";
 
-
                             searchResults.innerHTML =
                                 "";
 
@@ -825,7 +859,7 @@ async function searchUsers() {
 
 
 /* =========================================================
-   BUSCAR CHAT EXISTENTE
+   BUSCAR CONVERSACIÓN EXISTENTE
    ========================================================= */
 
 async function findConversation(
@@ -883,7 +917,7 @@ async function findConversation(
 
 
 /* =========================================================
-   ABRIR CHAT
+   ABRIR CONVERSACIÓN
    ========================================================= */
 
 async function openConversation(
@@ -891,80 +925,96 @@ async function openConversation(
     otherUser
 ) {
 
-    currentOtherUser = {
+    try {
 
-        id: otherUserId,
+        currentOtherUser = {
 
-        ...otherUser
+            id: otherUserId,
 
-    };
+            ...otherUser
 
-
-    let conversationId =
-        await findConversation(
-            otherUserId
-        );
+        };
 
 
-    if (!conversationId) {
-
-        const conversationReference =
-            await addDoc(
-                collection(
-                    db,
-                    "conversations"
-                ),
-                {
-
-                    members: [
-                        currentUser.uid,
-                        otherUserId
-                    ],
-
-                    createdAt:
-                        serverTimestamp(),
-
-                    lastMessage: "",
-
-                    lastMessageAt:
-                        serverTimestamp()
-
-                }
+        let conversationId =
+            await findConversation(
+                otherUserId
             );
 
 
-        conversationId =
-            conversationReference.id;
+        if (!conversationId) {
+
+            const conversationReference =
+                await addDoc(
+
+                    collection(
+                        db,
+                        "conversations"
+                    ),
+
+                    {
+
+                        members: [
+                            currentUser.uid,
+                            otherUserId
+                        ],
+
+                        createdAt:
+                            serverTimestamp(),
+
+                        lastMessage:
+                            "",
+
+                        lastMessageAt:
+                            serverTimestamp()
+
+                    }
+
+                );
+
+
+            conversationId =
+                conversationReference.id;
+
+        }
+
+
+        currentConversationId =
+            conversationId;
+
+
+        welcome.classList.add(
+            "hidden"
+        );
+
+
+        chatWindow.classList.remove(
+            "hidden"
+        );
+
+
+        chatTitle.textContent =
+            "@" +
+            otherUser.username;
+
+
+        chatStatus.textContent =
+            "Chat privado";
+
+
+        loadMessages(
+            conversationId
+        );
+
+
+    } catch (error) {
+
+        console.error(
+            "Error abriendo conversación:",
+            error
+        );
 
     }
-
-
-    currentConversationId =
-        conversationId;
-
-
-    welcome.classList.add(
-        "hidden"
-    );
-
-
-    chatWindow.classList.remove(
-        "hidden"
-    );
-
-
-    chatTitle.textContent =
-        "@" +
-        otherUser.username;
-
-
-    chatStatus.textContent =
-        "Chat privado";
-
-
-    loadMessages(
-        conversationId
-    );
 
 }
 
@@ -1009,6 +1059,7 @@ function loadMessages(
 
     unsubscribeMessages =
         onSnapshot(
+
             messagesQuery,
 
             function (snapshot) {
@@ -1044,6 +1095,7 @@ function loadMessages(
                 );
 
             }
+
         );
 
 }
@@ -1150,7 +1202,6 @@ async function sendMessage() {
 
     messageInput.value = "";
 
-
     sendButton.disabled = true;
 
 
@@ -1229,7 +1280,7 @@ async function sendMessage() {
 
 
 /* =========================================================
-   CARGAR LISTA DE CHATS
+   CARGAR CHATS
    ========================================================= */
 
 function loadConversations() {
