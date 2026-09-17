@@ -1,4 +1,6 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+import {
+    initializeApp
+} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
 
 import {
     getAuth,
@@ -39,10 +41,15 @@ const firebaseConfig = {
     measurementId: "G-TSJWY9EVS7"
 };
 
-const firebaseApp = initializeApp(firebaseConfig);
 
-const auth = getAuth(firebaseApp);
-const db = getFirestore(firebaseApp);
+const firebaseApp =
+    initializeApp(firebaseConfig);
+
+const auth =
+    getAuth(firebaseApp);
+
+const db =
+    getFirestore(firebaseApp);
 
 
 /* =========================
@@ -56,57 +63,107 @@ const MAX_MESSAGE_LENGTH = 1000;
    ELEMENTOS
 ========================= */
 
-const authScreen = document.getElementById("authScreen");
-const app = document.getElementById("app");
+const authScreen =
+    document.getElementById("authScreen");
 
-const loginForm = document.getElementById("loginForm");
-const registerForm = document.getElementById("registerForm");
+const app =
+    document.getElementById("app");
 
-const loginEmail = document.getElementById("loginEmail");
-const loginPassword = document.getElementById("loginPassword");
+const loginForm =
+    document.getElementById("loginForm");
 
-const registerEmail = document.getElementById("registerEmail");
-const registerUsername = document.getElementById("registerUsername");
-const registerPassword = document.getElementById("registerPassword");
+const registerForm =
+    document.getElementById("registerForm");
 
-const loginButton = document.getElementById("loginButton");
-const registerButton = document.getElementById("registerButton");
+const loginEmail =
+    document.getElementById("loginEmail");
 
-const showRegisterButton = document.getElementById("showRegister");
-const showLoginButton = document.getElementById("showLogin");
+const loginPassword =
+    document.getElementById("loginPassword");
 
-const authMessage = document.getElementById("authMessage");
+const registerEmail =
+    document.getElementById("registerEmail");
 
-const currentUserElement = document.getElementById("currentUser");
-const logoutButton = document.getElementById("logoutButton");
+const registerUsername =
+    document.getElementById("registerUsername");
 
-const userSearch = document.getElementById("userSearch");
-const searchResults = document.getElementById("searchResults");
+const registerPassword =
+    document.getElementById("registerPassword");
 
-const createGroupButton = document.getElementById("createGroupButton");
+const loginButton =
+    document.getElementById("loginButton");
 
-const chatList = document.getElementById("chatList");
+const registerButton =
+    document.getElementById("registerButton");
 
-const welcome = document.getElementById("welcome");
-const chatWindow = document.getElementById("chatWindow");
+const showRegisterButton =
+    document.getElementById("showRegister");
 
-const chatTitle = document.getElementById("chatTitle");
-const chatStatus = document.getElementById("chatStatus");
+const showLoginButton =
+    document.getElementById("showLogin");
 
-const messages = document.getElementById("messages");
+const authMessage =
+    document.getElementById("authMessage");
 
-const messageInput = document.getElementById("messageInput");
-const characterCounter = document.getElementById("characterCounter");
-const sendButton = document.getElementById("sendButton");
+const currentUserElement =
+    document.getElementById("currentUser");
 
-const deleteChatButton = document.getElementById("deleteChatButton");
+const logoutButton =
+    document.getElementById("logoutButton");
 
-const groupModal = document.getElementById("groupModal");
-const groupName = document.getElementById("groupName");
-const groupUsers = document.getElementById("groupUsers");
+const userSearch =
+    document.getElementById("userSearch");
 
-const cancelGroupButton = document.getElementById("cancelGroupButton");
-const confirmGroupButton = document.getElementById("confirmGroupButton");
+const searchResults =
+    document.getElementById("searchResults");
+
+const createGroupButton =
+    document.getElementById("createGroupButton");
+
+const chatList =
+    document.getElementById("chatList");
+
+const welcome =
+    document.getElementById("welcome");
+
+const chatWindow =
+    document.getElementById("chatWindow");
+
+const chatTitle =
+    document.getElementById("chatTitle");
+
+const chatStatus =
+    document.getElementById("chatStatus");
+
+const messages =
+    document.getElementById("messages");
+
+const messageInput =
+    document.getElementById("messageInput");
+
+const characterCounter =
+    document.getElementById("characterCounter");
+
+const sendButton =
+    document.getElementById("sendButton");
+
+const deleteChatButton =
+    document.getElementById("deleteChatButton");
+
+const groupModal =
+    document.getElementById("groupModal");
+
+const groupName =
+    document.getElementById("groupName");
+
+const groupUsers =
+    document.getElementById("groupUsers");
+
+const cancelGroupButton =
+    document.getElementById("cancelGroupButton");
+
+const confirmGroupButton =
+    document.getElementById("confirmGroupButton");
 
 
 /* =========================
@@ -114,12 +171,15 @@ const confirmGroupButton = document.getElementById("confirmGroupButton");
 ========================= */
 
 let currentUser = null;
+
 let currentProfile = null;
 
 let currentConversationId = null;
+
 let currentConversationData = null;
 
 let unsubscribeMessages = null;
+
 let unsubscribeChats = null;
 
 let creatingAccount = false;
@@ -131,45 +191,89 @@ let searchTimeout = null;
    AUTENTICACIÓN
 ========================= */
 
-function showAuthMessage(message, error = false) {
-    authMessage.textContent = message;
+function showAuthMessage(
+    message,
+    error = false
+) {
+
+    authMessage.textContent =
+        message;
 
     if (error) {
-        authMessage.style.color = "#ff4d4d";
+
+        authMessage.style.color =
+            "#ff4d4d";
+
     } else {
-        authMessage.style.color = "";
+
+        authMessage.style.color =
+            "";
     }
 }
 
 
 function showApp() {
-    authScreen.classList.add("hidden");
-    app.classList.remove("hidden");
+
+    authScreen.classList.add(
+        "hidden"
+    );
+
+    app.classList.remove(
+        "hidden"
+    );
 }
 
 
 function showAuth() {
-    app.classList.add("hidden");
-    authScreen.classList.remove("hidden");
+
+    app.classList.add(
+        "hidden"
+    );
+
+    authScreen.classList.remove(
+        "hidden"
+    );
 }
 
 
 function showLoginForm() {
-    loginForm.classList.remove("hidden");
-    registerForm.classList.add("hidden");
+
+    loginForm.classList.remove(
+        "hidden"
+    );
+
+    registerForm.classList.add(
+        "hidden"
+    );
+
     showAuthMessage("");
 }
 
 
 function showRegisterForm() {
-    loginForm.classList.add("hidden");
-    registerForm.classList.remove("hidden");
+
+    loginForm.classList.add(
+        "hidden"
+    );
+
+    registerForm.classList.remove(
+        "hidden"
+    );
+
     showAuthMessage("");
 }
 
 
-showRegisterButton.addEventListener("click", showRegisterForm);
-showLoginButton.addEventListener("click", showLoginForm);
+showRegisterButton.addEventListener(
+    "click",
+    showRegisterForm
+);
+
+
+showLoginButton.addEventListener(
+    "click",
+    showLoginForm
+);
 
 
 /* =========================
@@ -177,56 +281,85 @@ showLoginButton.addEventListener("click", showLoginForm);
 ========================= */
 
 async function register() {
-    const email = registerEmail.value.trim();
-    const username = registerUsername.value.trim();
-    const password = registerPassword.value;
+
+    const email =
+        registerEmail.value.trim();
+
+    const username =
+        registerUsername.value.trim();
+
+    const password =
+        registerPassword.value;
+
 
     if (!email) {
+
         showAuthMessage(
             "Escribe tu correo electrónico.",
             true
         );
+
         return;
     }
 
+
     if (!username) {
+
         showAuthMessage(
             "Escribe un nombre de usuario.",
             true
         );
+
         return;
     }
 
+
     if (username.length < 3) {
+
         showAuthMessage(
             "El usuario debe tener al menos 3 caracteres.",
             true
         );
+
         return;
     }
 
+
     if (!password) {
+
         showAuthMessage(
             "Escribe una contraseña.",
             true
         );
+
         return;
     }
 
+
     if (password.length < 6) {
+
         showAuthMessage(
             "La contraseña debe tener al menos 6 caracteres.",
             true
         );
+
         return;
     }
 
-    registerButton.disabled = true;
-    creatingAccount = true;
 
-    showAuthMessage("Creando cuenta...");
+    registerButton.disabled =
+        true;
+
+    creatingAccount =
+        true;
+
+    showAuthMessage(
+        "Creando cuenta..."
+    );
+
 
     try {
+
         const userCredential =
             await createUserWithEmailAndPassword(
                 auth,
@@ -234,46 +367,87 @@ async function register() {
                 password
             );
 
-        const user = userCredential.user;
+
+        const user =
+            userCredential.user;
+
 
         const usernameLower =
             username.toLowerCase();
 
+
         await setDoc(
-            doc(db, "users", user.uid),
+            doc(
+                db,
+                "users",
+                user.uid
+            ),
             {
-                username: username,
-                usernameLower: usernameLower,
-                email: email,
-                createdAt: serverTimestamp()
+                username:
+                    username,
+
+                usernameLower:
+                    usernameLower,
+
+                email:
+                    email,
+
+                createdAt:
+                    serverTimestamp()
             }
         );
 
-        currentUser = user;
+
+        currentUser =
+            user;
+
 
         currentProfile = {
-            username: username,
-            usernameLower: usernameLower,
-            email: email
+            username:
+                username,
+
+            usernameLower:
+                usernameLower,
+
+            email:
+                email
         };
 
-        registerEmail.value = "";
-        registerUsername.value = "";
-        registerPassword.value = "";
+
+        registerEmail.value =
+            "";
+
+        registerUsername.value =
+            "";
+
+        registerPassword.value =
+            "";
+
 
         await enterApp();
 
+
     } catch (error) {
-        console.error("ERROR REGISTRO:", error);
+
+        console.error(
+            "ERROR REGISTRO:",
+            error
+        );
+
 
         showAuthMessage(
             getFirebaseErrorMessage(error),
             true
         );
 
+
     } finally {
-        registerButton.disabled = false;
-        creatingAccount = false;
+
+        registerButton.disabled =
+            false;
+
+        creatingAccount =
+            false;
     }
 }
 
@@ -289,31 +463,45 @@ registerButton.addEventListener(
 ========================= */
 
 async function login() {
-    const email = loginEmail.value.trim();
-    const password = loginPassword.value;
+
+    const email =
+        loginEmail.value.trim();
+
+    const password =
+        loginPassword.value;
+
 
     if (!email) {
+
         showAuthMessage(
             "Escribe tu correo electrónico.",
             true
         );
+
         return;
     }
 
+
     if (!password) {
+
         showAuthMessage(
             "Escribe tu contraseña.",
             true
         );
+
         return;
     }
 
-    loginButton.disabled = true;
 
-    showAuthMessage("Iniciando sesión...");
+    loginButton.disabled =
+        true;
+
+    showAuthMessage(
+        "Iniciando sesión..."
+    );
+
 
     try {
-        console.log("LOGIN 1: Authentication");
 
         const userCredential =
             await signInWithEmailAndPassword(
@@ -322,20 +510,12 @@ async function login() {
                 password
             );
 
-        console.log("LOGIN 2: Authentication OK");
 
-        currentUser = userCredential.user;
+        currentUser =
+            userCredential.user;
 
-        console.log(
-            "UID:",
-            currentUser.uid
-        );
 
-        console.log(
-            "LOGIN 3: Buscando perfil"
-        );
-
-        const userSnapshot =
+        const snapshot =
             await getDoc(
                 doc(
                     db,
@@ -344,14 +524,11 @@ async function login() {
                 )
             );
 
-        console.log(
-            "LOGIN 4: Perfil existe:",
-            userSnapshot.exists()
-        );
 
-        if (!userSnapshot.exists()) {
+        if (!snapshot.exists()) {
+
             showAuthMessage(
-                "La cuenta existe, pero no tiene perfil.",
+                "La cuenta no tiene perfil.",
                 true
             );
 
@@ -360,42 +537,32 @@ async function login() {
             return;
         }
 
-        currentProfile =
-            userSnapshot.data();
 
-        console.log(
-            "LOGIN 5: Perfil cargado"
-        );
+        currentProfile =
+            snapshot.data();
+
 
         await enterApp();
 
-        console.log(
-            "LOGIN 6: Aplicación abierta"
-        );
 
     } catch (error) {
+
         console.error(
             "ERROR LOGIN:",
             error
         );
 
-        console.error(
-            "CÓDIGO:",
-            error.code
-        );
-
-        console.error(
-            "MENSAJE:",
-            error.message
-        );
 
         showAuthMessage(
             getFirebaseErrorMessage(error),
             true
         );
 
+
     } finally {
-        loginButton.disabled = false;
+
+        loginButton.disabled =
+            false;
     }
 }
 
@@ -409,8 +576,11 @@ loginButton.addEventListener(
 loginPassword.addEventListener(
     "keydown",
     event => {
+
         if (event.key === "Enter") {
+
             event.preventDefault();
+
             login();
         }
     }
@@ -420,8 +590,11 @@ loginPassword.addEventListener(
 registerPassword.addEventListener(
     "keydown",
     event => {
+
         if (event.key === "Enter") {
+
             event.preventDefault();
+
             register();
         }
     }
@@ -432,7 +605,10 @@ registerPassword.addEventListener(
    ERRORES FIREBASE
 ========================= */
 
-function getFirebaseErrorMessage(error) {
+function getFirebaseErrorMessage(
+    error
+) {
+
     switch (error.code) {
 
         case "auth/invalid-credential":
@@ -454,7 +630,7 @@ function getFirebaseErrorMessage(error) {
             return "La contraseña debe tener al menos 6 caracteres.";
 
         case "auth/operation-not-allowed":
-            return "Email/contraseña no está habilitado en Firebase Authentication.";
+            return "Email/contraseña no está habilitado en Firebase.";
 
         case "auth/network-request-failed":
             return "No se pudo conectar con Firebase.";
@@ -464,7 +640,7 @@ function getFirebaseErrorMessage(error) {
 
         default:
             return (
-                error.code +
+                (error.code || "error") +
                 " - " +
                 error.message
             );
@@ -476,7 +652,10 @@ function getFirebaseErrorMessage(error) {
    PERFIL
 ========================= */
 
-async function loadUserProfile(user) {
+async function loadUserProfile(
+    user
+) {
+
     const snapshot =
         await getDoc(
             doc(
@@ -486,110 +665,125 @@ async function loadUserProfile(user) {
             )
         );
 
+
     if (!snapshot.exists()) {
+
         return null;
     }
+
 
     return snapshot.data();
 }
 
 
 /* =========================
-   ENTRAR A LA APP
+   ENTRAR
 ========================= */
 
 async function enterApp() {
+
     if (!currentUser) {
+
         return;
     }
 
+
     try {
+
         if (!currentProfile) {
+
             currentProfile =
                 await loadUserProfile(
                     currentUser
                 );
         }
 
+
         if (!currentProfile) {
+
             showAuthMessage(
                 "No se encontró tu perfil.",
                 true
             );
+
             return;
         }
+
 
         currentUserElement.textContent =
             "@" +
             currentProfile.username;
 
+
         showApp();
+
 
         await loadConversations();
 
+
     } catch (error) {
+
         console.error(
             "ERROR ENTRANDO:",
             error
-        );
-
-        showAuthMessage(
-            "Error cargando la cuenta: " +
-            error.message,
-            true
         );
     }
 }
 
 
 /* =========================
-   ESTADO AUTH
+   AUTH STATE
 ========================= */
 
 onAuthStateChanged(
     auth,
     async user => {
 
-        console.log(
-            "AUTH STATE:",
-            user
-        );
-
         if (!user) {
-            currentUser = null;
-            currentProfile = null;
+
+            currentUser =
+                null;
+
+            currentProfile =
+                null;
 
             showAuth();
 
             return;
         }
 
-        currentUser = user;
+
+        currentUser =
+            user;
+
 
         if (creatingAccount) {
+
             return;
         }
 
+
         try {
+
             currentProfile =
                 await loadUserProfile(
                     user
                 );
 
+
             if (!currentProfile) {
-                console.error(
-                    "No existe users/" +
-                    user.uid
-                );
 
                 await signOut(auth);
 
                 return;
             }
 
+
             await enterApp();
 
+
         } catch (error) {
+
             console.error(
                 "ERROR AUTH:",
                 error
@@ -600,7 +794,7 @@ onAuthStateChanged(
 
 
 /* =========================
-   CERRAR SESIÓN
+   LOGOUT
 ========================= */
 
 logoutButton.addEventListener(
@@ -610,29 +804,57 @@ logoutButton.addEventListener(
         try {
 
             if (unsubscribeChats) {
+
                 unsubscribeChats();
-                unsubscribeChats = null;
+
+                unsubscribeChats =
+                    null;
             }
+
 
             if (unsubscribeMessages) {
+
                 unsubscribeMessages();
-                unsubscribeMessages = null;
+
+                unsubscribeMessages =
+                    null;
             }
 
-            currentConversationId = null;
-            currentConversationData = null;
-            currentProfile = null;
 
-            messages.innerHTML = "";
-            chatList.innerHTML = "";
-            searchResults.innerHTML = "";
+            currentConversationId =
+                null;
 
-            chatWindow.classList.add("hidden");
-            welcome.classList.remove("hidden");
+            currentConversationData =
+                null;
+
+            currentProfile =
+                null;
+
+
+            messages.innerHTML =
+                "";
+
+            chatList.innerHTML =
+                "";
+
+            searchResults.innerHTML =
+                "";
+
+
+            chatWindow.classList.add(
+                "hidden"
+            );
+
+            welcome.classList.remove(
+                "hidden"
+            );
+
 
             await signOut(auth);
 
+
         } catch (error) {
+
             console.error(
                 "ERROR LOGOUT:",
                 error
@@ -650,7 +872,10 @@ userSearch.addEventListener(
     "input",
     () => {
 
-        clearTimeout(searchTimeout);
+        clearTimeout(
+            searchTimeout
+        );
+
 
         searchTimeout =
             setTimeout(
@@ -668,11 +893,16 @@ async function searchUsers() {
             .trim()
             .toLowerCase();
 
-    searchResults.innerHTML = "";
+
+    searchResults.innerHTML =
+        "";
+
 
     if (!text || !currentUser) {
+
         return;
     }
+
 
     try {
 
@@ -684,7 +914,12 @@ async function searchUsers() {
                 )
             );
 
+
         const foundUsers = [];
+
+        const alreadyAdded =
+            new Set();
+
 
         snapshot.forEach(
             userDocument => {
@@ -693,18 +928,23 @@ async function searchUsers() {
                     userDocument.id ===
                     currentUser.uid
                 ) {
+
                     return;
                 }
+
 
                 const data =
                     userDocument.data();
 
+
                 const username =
                     data.username || "";
+
 
                 const usernameLower =
                     data.usernameLower ||
                     username.toLowerCase();
+
 
                 if (
                     usernameLower.includes(
@@ -712,7 +952,23 @@ async function searchUsers() {
                     )
                 ) {
 
+                    if (
+                        alreadyAdded.has(
+                            userDocument.id
+                        )
+                    ) {
+
+                        return;
+                    }
+
+
+                    alreadyAdded.add(
+                        userDocument.id
+                    );
+
+
                     foundUsers.push({
+
                         id:
                             userDocument.id,
 
@@ -726,7 +982,10 @@ async function searchUsers() {
             }
         );
 
-        if (foundUsers.length === 0) {
+
+        if (
+            foundUsers.length === 0
+        ) {
 
             searchResults.innerHTML =
                 `
@@ -738,6 +997,7 @@ async function searchUsers() {
             return;
         }
 
+
         foundUsers.forEach(
             user => {
 
@@ -746,8 +1006,10 @@ async function searchUsers() {
                         "div"
                     );
 
+
                 element.className =
                     "search-result";
+
 
                 element.innerHTML =
                     `
@@ -760,20 +1022,24 @@ async function searchUsers() {
                     </div>
                     `;
 
+
                 element.addEventListener(
                     "click",
                     async () => {
 
                         await openConversationWithUser(
-                            user.id,
-                            user.username
+                            user.id
                         );
 
-                        userSearch.value = "";
 
-                        searchResults.innerHTML = "";
+                        userSearch.value =
+                            "";
+
+                        searchResults.innerHTML =
+                            "";
                     }
                 );
+
 
                 searchResults.appendChild(
                     element
@@ -781,12 +1047,14 @@ async function searchUsers() {
             }
         );
 
+
     } catch (error) {
 
         console.error(
             "ERROR BUSCANDO:",
             error
         );
+
 
         searchResults.innerHTML =
             `
@@ -799,17 +1067,12 @@ async function searchUsers() {
 
 
 /* =========================
-   ABRIR CHAT PRIVADO
+   CHAT PRIVADO
 ========================= */
 
 async function openConversationWithUser(
-    otherUserId,
-    otherUsername
+    otherUserId
 ) {
-
-    if (!currentUser) {
-        return;
-    }
 
     try {
 
@@ -818,16 +1081,19 @@ async function openConversationWithUser(
                 otherUserId
             );
 
+
         await openConversation(
             conversationId
         );
 
+
     } catch (error) {
 
         console.error(
-            "ERROR ABRIENDO CHAT:",
+            "ERROR CHAT:",
             error
         );
+
 
         alert(
             "No se pudo abrir el chat:\n" +
@@ -851,6 +1117,7 @@ async function findOrCreateConversation(
             "conversations"
         );
 
+
     const q =
         query(
             conversationsRef,
@@ -861,8 +1128,13 @@ async function findOrCreateConversation(
             )
         );
 
+
     const snapshot =
         await getDocs(q);
+
+
+    const matchingConversations = [];
+
 
     for (
         const conversationDocument
@@ -872,14 +1144,18 @@ async function findOrCreateConversation(
         const data =
             conversationDocument.data();
 
+
         if (
             data.type === "group"
         ) {
+
             continue;
         }
 
+
         const members =
             data.members || [];
+
 
         if (
             members.length === 2 &&
@@ -888,15 +1164,34 @@ async function findOrCreateConversation(
             )
         ) {
 
-            return conversationDocument.id;
+            matchingConversations.push(
+                conversationDocument
+            );
         }
     }
+
+
+    /*
+       Si ya existe uno o varios chats
+       con Pepe, usamos el primero.
+
+       Así no se crea otro chat nuevo.
+    */
+
+    if (
+        matchingConversations.length > 0
+    ) {
+
+        return matchingConversations[0].id;
+    }
+
 
     const newConversation =
         await addDoc(
             conversationsRef,
             {
-                type: "private",
+                type:
+                    "private",
 
                 members: [
                     currentUser.uid,
@@ -906,12 +1201,14 @@ async function findOrCreateConversation(
                 createdAt:
                     serverTimestamp(),
 
-                lastMessage: "",
+                lastMessage:
+                    "",
 
                 lastMessageAt:
                     serverTimestamp()
             }
         );
+
 
     return newConversation.id;
 }
@@ -927,7 +1224,7 @@ async function openConversation(
 
     try {
 
-        const conversationSnapshot =
+        const snapshot =
             await getDoc(
                 doc(
                     db,
@@ -936,20 +1233,24 @@ async function openConversation(
                 )
             );
 
-        if (
-            !conversationSnapshot.exists()
-        ) {
+
+        if (!snapshot.exists()) {
+
             return;
         }
 
+
         const data =
-            conversationSnapshot.data();
+            snapshot.data();
+
 
         currentConversationId =
             conversationId;
 
+
         currentConversationData =
             data;
+
 
         if (
             data.type === "group"
@@ -958,21 +1259,26 @@ async function openConversation(
             chatTitle.textContent =
                 data.name || "Grupo";
 
+
             chatStatus.textContent =
                 "👥 Grupo · " +
                 (data.members?.length || 0) +
                 " participantes";
 
+
         } else {
 
             const otherUserId =
-                data.members.find(
+                (data.members || []).find(
                     id =>
                         id !==
                         currentUser.uid
                 );
 
-            let username = "Usuario";
+
+            let username =
+                "Usuario";
+
 
             if (otherUserId) {
 
@@ -985,6 +1291,7 @@ async function openConversation(
                         )
                     );
 
+
                 if (
                     userSnapshot.exists()
                 ) {
@@ -992,42 +1299,51 @@ async function openConversation(
                     const userData =
                         userSnapshot.data();
 
+
                     username =
                         userData.username ||
                         "Usuario";
                 }
             }
 
+
             chatTitle.textContent =
                 username;
+
 
             chatStatus.textContent =
                 "Chat privado";
         }
 
+
         welcome.classList.add(
             "hidden"
         );
+
 
         chatWindow.classList.remove(
             "hidden"
         );
 
+
         await loadMessages(
             conversationId
         );
 
+
         messageInput.focus();
+
 
     } catch (error) {
 
         console.error(
-            "ERROR ABRIENDO CONVERSACIÓN:",
+            "ERROR ABRIENDO:",
             error
         );
 
+
         alert(
-            "No se pudo abrir la conversación:\n" +
+            "No se pudo abrir el chat:\n" +
             error.message
         );
     }
@@ -1035,7 +1351,7 @@ async function openConversation(
 
 
 /* =========================
-   CARGAR MENSAJES
+   MENSAJES
 ========================= */
 
 async function loadMessages(
@@ -1043,11 +1359,17 @@ async function loadMessages(
 ) {
 
     if (unsubscribeMessages) {
+
         unsubscribeMessages();
-        unsubscribeMessages = null;
+
+        unsubscribeMessages =
+            null;
     }
 
-    messages.innerHTML = "";
+
+    messages.innerHTML =
+        "";
+
 
     const messagesRef =
         collection(
@@ -1056,6 +1378,7 @@ async function loadMessages(
             conversationId,
             "messages"
         );
+
 
     const q =
         query(
@@ -1066,12 +1389,16 @@ async function loadMessages(
             )
         );
 
+
     unsubscribeMessages =
         onSnapshot(
             q,
+
             snapshot => {
 
-                messages.innerHTML = "";
+                messages.innerHTML =
+                    "";
+
 
                 snapshot.forEach(
                     messageDocument => {
@@ -1083,9 +1410,11 @@ async function loadMessages(
                     }
                 );
 
+
                 messages.scrollTop =
                     messages.scrollHeight;
             },
+
 
             error => {
 
@@ -1093,6 +1422,7 @@ async function loadMessages(
                     "ERROR MENSAJES:",
                     error
                 );
+
 
                 messages.innerHTML =
                     `
@@ -1119,34 +1449,42 @@ function displayMessage(
             "div"
         );
 
+
     const isMine =
         data.senderId ===
         currentUser.uid;
+
 
     element.className =
         isMine
             ? "message mine"
             : "message other";
 
+
     const content =
         document.createElement(
             "div"
         );
 
+
     content.className =
         "message-content";
 
+
     content.textContent =
         data.content || "";
+
 
     element.appendChild(
         content
     );
 
+
     if (data.createdAt) {
 
         const date =
             data.createdAt.toDate();
+
 
         const time =
             date.toLocaleTimeString(
@@ -1157,21 +1495,26 @@ function displayMessage(
                 }
             );
 
+
         const timeElement =
             document.createElement(
                 "div"
             );
 
+
         timeElement.className =
             "message-time";
 
+
         timeElement.textContent =
             time;
+
 
         element.appendChild(
             timeElement
         );
     }
+
 
     if (isMine) {
 
@@ -1180,14 +1523,18 @@ function displayMessage(
                 "button"
             );
 
+
         deleteButton.className =
             "delete-message-button";
+
 
         deleteButton.textContent =
             "🗑️";
 
+
         deleteButton.title =
             "Eliminar mensaje";
+
 
         deleteButton.addEventListener(
             "click",
@@ -1195,14 +1542,16 @@ function displayMessage(
 
                 event.stopPropagation();
 
-                const confirmed =
-                    confirm(
-                        "¿Eliminar este mensaje?"
-                    );
 
-                if (!confirmed) {
+                if (
+                    !confirm(
+                        "¿Eliminar este mensaje?"
+                    )
+                ) {
+
                     return;
                 }
+
 
                 try {
 
@@ -1216,12 +1565,14 @@ function displayMessage(
                         )
                     );
 
+
                 } catch (error) {
 
                     console.error(
-                        "ERROR ELIMINANDO MENSAJE:",
+                        "ERROR ELIMINANDO:",
                         error
                     );
+
 
                     alert(
                         "No se pudo eliminar el mensaje:\n" +
@@ -1231,10 +1582,12 @@ function displayMessage(
             }
         );
 
+
         element.appendChild(
             deleteButton
         );
     }
+
 
     messages.appendChild(
         element
@@ -1251,11 +1604,17 @@ async function sendMessage() {
     const content =
         messageInput.value.trim();
 
+
     if (!content) {
+
         return;
     }
 
-    if (content.length > MAX_MESSAGE_LENGTH) {
+
+    if (
+        content.length >
+        MAX_MESSAGE_LENGTH
+    ) {
 
         alert(
             "El mensaje no puede superar los " +
@@ -1266,15 +1625,22 @@ async function sendMessage() {
         return;
     }
 
+
     if (!currentUser) {
+
         return;
     }
+
 
     if (!currentConversationId) {
+
         return;
     }
 
-    sendButton.disabled = true;
+
+    sendButton.disabled =
+        true;
+
 
     try {
 
@@ -1285,6 +1651,7 @@ async function sendMessage() {
                 currentConversationId,
                 "messages"
             );
+
 
         await addDoc(
             messagesRef,
@@ -1300,6 +1667,7 @@ async function sendMessage() {
             }
         );
 
+
         await setDoc(
             doc(
                 db,
@@ -1314,13 +1682,18 @@ async function sendMessage() {
                     serverTimestamp()
             },
             {
-                merge: true
+                merge:
+                    true
             }
         );
 
-        messageInput.value = "";
+
+        messageInput.value =
+            "";
+
 
         updateCharacterCounter();
+
 
     } catch (error) {
 
@@ -1329,14 +1702,17 @@ async function sendMessage() {
             error
         );
 
+
         alert(
             "No se pudo enviar el mensaje:\n" +
             error.message
         );
 
+
     } finally {
 
-        sendButton.disabled = false;
+        sendButton.disabled =
+            false;
 
         messageInput.focus();
     }
@@ -1375,10 +1751,12 @@ function updateCharacterCounter() {
     const length =
         messageInput.value.length;
 
+
     characterCounter.textContent =
         length +
         " / " +
         MAX_MESSAGE_LENGTH;
+
 
     if (
         length >=
@@ -1401,6 +1779,7 @@ messageInput.addEventListener(
     updateCharacterCounter
 );
 
+
 updateCharacterCounter();
 
 
@@ -1411,19 +1790,26 @@ updateCharacterCounter();
 async function loadConversations() {
 
     if (!currentUser) {
+
         return;
     }
 
+
     if (unsubscribeChats) {
+
         unsubscribeChats();
-        unsubscribeChats = null;
+
+        unsubscribeChats =
+            null;
     }
+
 
     const conversationsRef =
         collection(
             db,
             "conversations"
         );
+
 
     const q =
         query(
@@ -1435,14 +1821,37 @@ async function loadConversations() {
             )
         );
 
+
     unsubscribeChats =
         onSnapshot(
             q,
+
             async snapshot => {
 
-                chatList.innerHTML = "";
+                chatList.innerHTML =
+                    "";
 
-                const conversations = [];
+
+                const conversations =
+                    [];
+
+
+                /*
+                   IMPORTANTE:
+
+                   Esta lista evita que Pepe
+                   aparezca dos veces si existen
+                   accidentalmente dos conversaciones
+                   privadas con el mismo usuario.
+                */
+
+                const privateUsers =
+                    new Set();
+
+
+                const groupIds =
+                    new Set();
+
 
                 for (
                     const conversationDocument
@@ -1452,14 +1861,32 @@ async function loadConversations() {
                     const data =
                         conversationDocument.data();
 
+
                     const members =
                         data.members || [];
+
 
                     if (
                         data.type === "group"
                     ) {
 
+                        if (
+                            groupIds.has(
+                                conversationDocument.id
+                            )
+                        ) {
+
+                            continue;
+                        }
+
+
+                        groupIds.add(
+                            conversationDocument.id
+                        );
+
+
                         conversations.push({
+
                             id:
                                 conversationDocument.id,
 
@@ -1478,8 +1905,10 @@ async function loadConversations() {
                                 "group"
                         });
 
+
                         continue;
                     }
+
 
                     const otherUserId =
                         members.find(
@@ -1488,9 +1917,33 @@ async function loadConversations() {
                                 currentUser.uid
                         );
 
+
                     if (!otherUserId) {
+
                         continue;
                     }
+
+
+                    /*
+                       Si ya agregamos a Pepe,
+                       no agregamos otro chat
+                       privado con el mismo Pepe.
+                    */
+
+                    if (
+                        privateUsers.has(
+                            otherUserId
+                        )
+                    ) {
+
+                        continue;
+                    }
+
+
+                    privateUsers.add(
+                        otherUserId
+                    );
+
 
                     try {
 
@@ -1503,18 +1956,26 @@ async function loadConversations() {
                                 )
                             );
 
+
                         if (
                             !userSnapshot.exists()
                         ) {
+
                             continue;
                         }
+
 
                         const userData =
                             userSnapshot.data();
 
+
                         conversations.push({
+
                             id:
                                 conversationDocument.id,
+
+                            otherUserId:
+                                otherUserId,
 
                             username:
                                 userData.username ||
@@ -1531,14 +1992,16 @@ async function loadConversations() {
                                 "private"
                         });
 
+
                     } catch (error) {
 
                         console.error(
-                            "ERROR CARGANDO USUARIO:",
+                            "ERROR USUARIO:",
                             error
                         );
                     }
                 }
+
 
                 conversations.sort(
                     (a, b) => {
@@ -1547,16 +2010,26 @@ async function loadConversations() {
                             !a.lastMessageAt &&
                             !b.lastMessageAt
                         ) {
+
                             return 0;
                         }
 
-                        if (!a.lastMessageAt) {
+
+                        if (
+                            !a.lastMessageAt
+                        ) {
+
                             return 1;
                         }
 
-                        if (!b.lastMessageAt) {
+
+                        if (
+                            !b.lastMessageAt
+                        ) {
+
                             return -1;
                         }
+
 
                         return (
                             b.lastMessageAt.toMillis() -
@@ -1564,6 +2037,7 @@ async function loadConversations() {
                         );
                     }
                 );
+
 
                 conversations.forEach(
                     conversation => {
@@ -1575,12 +2049,14 @@ async function loadConversations() {
                 );
             },
 
+
             error => {
 
                 console.error(
                     "ERROR CARGANDO CHATS:",
                     error
                 );
+
 
                 chatList.innerHTML =
                     `
@@ -1594,7 +2070,7 @@ async function loadConversations() {
 
 
 /* =========================
-   ELEMENTO DE CHAT
+   ELEMENTO CHAT
 ========================= */
 
 function createChatElement(
@@ -1606,25 +2082,33 @@ function createChatElement(
             "div"
         );
 
+
     element.className =
         "chat-item";
+
 
     const icon =
         conversation.type === "group"
             ? "👥"
             : "👤";
 
+
     element.innerHTML =
         `
         <div class="chat-item-name">
             ${icon}
-            ${escapeHtml(conversation.username)}
+            ${escapeHtml(
+                conversation.username
+            )}
         </div>
 
         <div class="chat-item-message">
-            ${escapeHtml(conversation.lastMessage)}
+            ${escapeHtml(
+                conversation.lastMessage
+            )}
         </div>
         `;
+
 
     element.addEventListener(
         "click",
@@ -1635,6 +2119,7 @@ function createChatElement(
             );
         }
     );
+
 
     chatList.appendChild(
         element
@@ -1651,17 +2136,20 @@ deleteChatButton.addEventListener(
     async () => {
 
         if (!currentConversationId) {
+
             return;
         }
 
-        const confirmed =
-            confirm(
+
+        if (
+            !confirm(
                 "¿Eliminar este chat?"
-            );
+            )
+        ) {
 
-        if (!confirmed) {
             return;
         }
+
 
         try {
 
@@ -1673,25 +2161,36 @@ deleteChatButton.addEventListener(
                 )
             );
 
+
             if (unsubscribeMessages) {
 
                 unsubscribeMessages();
 
-                unsubscribeMessages = null;
+                unsubscribeMessages =
+                    null;
             }
 
-            currentConversationId = null;
-            currentConversationData = null;
 
-            messages.innerHTML = "";
+            currentConversationId =
+                null;
+
+            currentConversationData =
+                null;
+
+
+            messages.innerHTML =
+                "";
+
 
             chatWindow.classList.add(
                 "hidden"
             );
 
+
             welcome.classList.remove(
                 "hidden"
             );
+
 
         } catch (error) {
 
@@ -1699,6 +2198,7 @@ deleteChatButton.addEventListener(
                 "ERROR ELIMINANDO CHAT:",
                 error
             );
+
 
             alert(
                 "No se pudo eliminar el chat:\n" +
@@ -1727,9 +2227,12 @@ cancelGroupButton.addEventListener(
 
 async function openGroupModal() {
 
-    groupName.value = "";
+    groupName.value =
+        "";
 
-    groupUsers.innerHTML = "";
+    groupUsers.innerHTML =
+        "";
+
 
     try {
 
@@ -1741,7 +2244,14 @@ async function openGroupModal() {
                 )
             );
 
-        let found = false;
+
+        const users =
+            [];
+
+
+        const usernames =
+            new Set();
+
 
         snapshot.forEach(
             userDocument => {
@@ -1750,44 +2260,53 @@ async function openGroupModal() {
                     userDocument.id ===
                     currentUser.uid
                 ) {
+
                     return;
                 }
 
-                found = true;
 
                 const data =
                     userDocument.data();
 
-                const label =
-                    document.createElement(
-                        "label"
-                    );
 
-                label.className =
-                    "group-user";
+                const username =
+                    data.username ||
+                    "Usuario";
 
-                label.innerHTML =
-                    `
-                    <input
-                        type="checkbox"
-                        value="${userDocument.id}"
-                    >
 
-                    <span>
-                        ${escapeHtml(
-                            data.username ||
-                            "Usuario"
-                        )}
-                    </span>
-                    `;
+                /*
+                   Evita que el mismo usuario
+                   aparezca dos veces en el selector.
+                */
 
-                groupUsers.appendChild(
-                    label
+                if (
+                    usernames.has(
+                        userDocument.id
+                    )
+                ) {
+
+                    return;
+                }
+
+
+                usernames.add(
+                    userDocument.id
                 );
+
+
+                users.push({
+
+                    id:
+                        userDocument.id,
+
+                    username:
+                        username
+                });
             }
         );
 
-        if (!found) {
+
+        if (users.length === 0) {
 
             groupUsers.innerHTML =
                 `
@@ -1795,11 +2314,77 @@ async function openGroupModal() {
                     No hay otros usuarios registrados.
                 </div>
                 `;
+
+        } else {
+
+            users.sort(
+                (a, b) =>
+                    a.username.localeCompare(
+                        b.username,
+                        "es"
+                    )
+            );
+
+
+            users.forEach(
+                user => {
+
+                    const label =
+                        document.createElement(
+                            "label"
+                        );
+
+
+                    label.className =
+                        "group-user";
+
+
+                    const checkbox =
+                        document.createElement(
+                            "input"
+                        );
+
+
+                    checkbox.type =
+                        "checkbox";
+
+
+                    checkbox.value =
+                        user.id;
+
+
+                    const span =
+                        document.createElement(
+                            "span"
+                        );
+
+
+                    span.textContent =
+                        user.username;
+
+
+                    label.appendChild(
+                        checkbox
+                    );
+
+
+                    label.appendChild(
+                        span
+                    );
+
+
+                    groupUsers.appendChild(
+                        label
+                    );
+                }
+            );
         }
+
 
         groupModal.classList.remove(
             "hidden"
         );
+
 
     } catch (error) {
 
@@ -1808,8 +2393,10 @@ async function openGroupModal() {
             error
         );
 
+
         alert(
-            "No se pudieron cargar los usuarios."
+            "No se pudieron cargar los usuarios:\n" +
+            error.message
         );
     }
 }
@@ -1823,20 +2410,31 @@ function closeGroupModal() {
 }
 
 
+/* =========================
+   CREAR GRUPO
+========================= */
+
 confirmGroupButton.addEventListener(
     "click",
     createGroup
 );
 
 
-/* =========================
-   CREAR GRUPO
-========================= */
-
 async function createGroup() {
+
+    if (!currentUser) {
+
+        alert(
+            "No hay una sesión iniciada."
+        );
+
+        return;
+    }
+
 
     const name =
         groupName.value.trim();
+
 
     if (!name) {
 
@@ -1847,6 +2445,7 @@ async function createGroup() {
         return;
     }
 
+
     const selectedUsers =
         Array.from(
             groupUsers.querySelectorAll(
@@ -1856,6 +2455,7 @@ async function createGroup() {
             checkbox =>
                 checkbox.value
         );
+
 
     if (
         selectedUsers.length === 0
@@ -1868,8 +2468,10 @@ async function createGroup() {
         return;
     }
 
+
     confirmGroupButton.disabled =
         true;
+
 
     try {
 
@@ -1878,41 +2480,75 @@ async function createGroup() {
             ...selectedUsers
         ];
 
-        const groupReference =
-            await addDoc(
+
+        console.log(
+            "CREANDO GRUPO",
+            name
+        );
+
+
+        console.log(
+            "MIEMBROS",
+            members
+        );
+
+
+        const conversationRef =
+            doc(
                 collection(
                     db,
                     "conversations"
-                ),
-                {
-                    type:
-                        "group",
-
-                    name:
-                        name,
-
-                    ownerId:
-                        currentUser.uid,
-
-                    members:
-                        members,
-
-                    createdAt:
-                        serverTimestamp(),
-
-                    lastMessage:
-                        "",
-
-                    lastMessageAt:
-                        serverTimestamp()
-                }
+                )
             );
+
+
+        await setDoc(
+            conversationRef,
+            {
+                type:
+                    "group",
+
+                name:
+                    name,
+
+                ownerId:
+                    currentUser.uid,
+
+                members:
+                    members,
+
+                createdAt:
+                    serverTimestamp(),
+
+                lastMessage:
+                    "",
+
+                lastMessageAt:
+                    serverTimestamp()
+            }
+        );
+
+
+        console.log(
+            "GRUPO CREADO:",
+            conversationRef.id
+        );
+
 
         closeGroupModal();
 
+
+        groupName.value =
+            "";
+
+        groupUsers.innerHTML =
+            "";
+
+
         await openConversation(
-            groupReference.id
+            conversationRef.id
         );
+
 
     } catch (error) {
 
@@ -1921,10 +2557,14 @@ async function createGroup() {
             error
         );
 
+
         alert(
-            "No se pudo crear el grupo:\n" +
+            "No se pudo crear el grupo:\n\n" +
+            error.code +
+            "\n" +
             error.message
         );
+
 
     } finally {
 
@@ -1945,8 +2585,10 @@ function escapeHtml(text) {
             "div"
         );
 
+
     div.textContent =
         text || "";
+
 
     return div.innerHTML;
 }
