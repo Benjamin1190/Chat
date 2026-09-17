@@ -1,14 +1,3 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-
-<body>
-
 <div id="authScreen" class="auth-screen">
     <div class="auth-box">
 
@@ -20,10 +9,10 @@
         <div id="loginForm">
 
             <input
-                id="loginUsername"
-                type="text"
-                placeholder="Nombre de usuario"
-                autocomplete="username"
+                id="loginEmail"
+                type="email"
+                placeholder="Correo electrónico"
+                autocomplete="email"
             >
 
             <input
@@ -46,8 +35,14 @@
 
         </div>
 
-
         <div id="registerForm" class="hidden">
+
+            <input
+                id="registerEmail"
+                type="email"
+                placeholder="Correo electrónico"
+                autocomplete="email"
+            >
 
             <input
                 id="registerUsername"
@@ -80,125 +75,3 @@
 
     </div>
 </div>
-
-
-<div id="app" class="app hidden">
-
-    <aside class="sidebar">
-
-        <div class="sidebar-header">
-
-            <div>
-                <h2>Chat</h2>
-                <span id="currentUser"></span>
-            </div>
-
-            <button id="logoutButton" title="Cerrar sesión">
-                ↪
-            </button>
-
-        </div>
-
-
-        <div class="search">
-
-            <input
-                id="userSearch"
-                type="text"
-                placeholder="Buscar usuarios..."
-            >
-
-        </div>
-
-
-        <div id="searchResults"></div>
-
-
-        <div class="section-title">
-            MIS CHATS
-        </div>
-
-
-        <div id="chatList"></div>
-
-    </aside>
-
-
-    <main class="chat">
-
-        <div id="welcome" class="welcome">
-
-            <div class="welcome-icon">
-                💬
-            </div>
-
-            <h2>Bienvenido a Chat</h2>
-
-            <p>
-                Selecciona un chat para empezar a hablar.
-            </p>
-
-        </div>
-
-
-        <div id="chatWindow" class="chat-window hidden">
-
-            <header class="chat-header">
-
-                <div>
-
-                    <div id="chatTitle">
-                        Chat
-                    </div>
-
-                    <small id="chatStatus"></small>
-
-                </div>
-
-            </header>
-
-
-            <div id="messages" class="messages"></div>
-
-
-            <div class="message-area">
-
-                <input
-                    id="imageInput"
-                    type="file"
-                    accept="image/*"
-                    hidden
-                >
-
-                <button
-                    id="imageButton"
-                    title="Enviar imagen"
-                >
-                    📷
-                </button>
-
-                <input
-                    id="messageInput"
-                    type="text"
-                    placeholder="Escribe un mensaje..."
-                    autocomplete="off"
-                >
-
-                <button id="sendButton">
-                    ➤
-                </button>
-
-            </div>
-
-        </div>
-
-    </main>
-
-</div>
-
-
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app.js" defer></script>
-
-</body>
-</html>
