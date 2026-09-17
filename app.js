@@ -21,9 +21,10 @@ const app = document.getElementById("app");
 const loginForm = document.getElementById("loginForm");
 const registerForm = document.getElementById("registerForm");
 
-const loginUsername = document.getElementById("loginUsername");
+const loginEmail = document.getElementById("loginEmail");
 const loginPassword = document.getElementById("loginPassword");
 
+const registerEmail = document.getElementById("registerEmail");
 const registerUsername = document.getElementById("registerUsername");
 const registerPassword = document.getElementById("registerPassword");
 
@@ -59,15 +60,7 @@ const imageButton = document.getElementById("imageButton");
 const logoutButton = document.getElementById("logoutButton");
 
 // ========================================
-// EMAIL INTERNO
-// ========================================
-
-function makeInternalEmail(username) {
-    return username.trim().toLowerCase() + "@example.com";
-}
-
-// ========================================
-// MENSAJES DE AUTENTICACIÓN
+// MENSAJES
 // ========================================
 
 function showAuthMessage(text, error = false) {
@@ -79,45 +72,25 @@ function showAuthMessage(text, error = false) {
 }
 
 // ========================================
-// MOSTRAR LOGIN
+// LOGIN / REGISTRO
 // ========================================
 
-function showLoginScreen() {
-    loginForm.classList.remove("hidden");
-    registerForm.classList.add("hidden");
-
-    showAuthMessage("");
-
-    loginUsername.focus();
-}
-
-// ========================================
-// MOSTRAR REGISTRO
-// ========================================
-
-function showRegisterScreen() {
+showRegister.addEventListener("click", () => {
     loginForm.classList.add("hidden");
     registerForm.classList.remove("hidden");
 
     showAuthMessage("");
 
-    registerUsername.focus();
-}
-
-// ========================================
-// BOTÓN REGISTRAR
-// ========================================
-
-showRegister.addEventListener("click", function () {
-    showRegisterScreen();
+    registerEmail.focus();
 });
 
-// ========================================
-// BOTÓN VOLVER AL LOGIN
-// ========================================
+showLogin.addEventListener("click", () => {
+    registerForm.classList.add("hidden");
+    loginForm.classList.remove("hidden");
 
-showLogin.addEventListener("click", function () {
-    showLoginScreen();
+    showAuthMessage("");
+
+    loginEmail.focus();
 });
 
 // ========================================
@@ -129,36 +102,46 @@ function validUsername(username) {
 }
 
 // ========================================
-// REGISTRAR CUENTA
+// REGISTRO
 // ========================================
 
-registerButton.addEventListener("click", async function () {
+registerButton.addEventListener("click", async () => {
 
-    const username = registerUsername.value
-        .trim()
-        .toLowerCase();
-
+    const email = registerEmail.value.trim();
+    const username = registerUsername.value.trim().toLowerCase();
     const password = registerPassword.value;
 
     showAuthMessage("");
 
-    if (!validUsername(username)) {
-
+    if (!email) {
         showAuthMessage(
-            "El usuario debe tener entre 3 y 20 caracteres. Solo letras, números y _.",
+            "Escribe tu correo electrónico.",
             true
         );
+        return;
+    }
 
+    if (!email.includes("@")) {
+        showAuthMessage(
+            "Escribe un correo electrónico válido.",
+            true
+        );
+        return;
+    }
+
+    if (!validUsername(username)) {
+        showAuthMessage(
+            "El nombre de usuario debe tener entre 3 y 20 caracteres y solo usar letras, números o _.",
+            true
+        );
         return;
     }
 
     if (password.length < 6) {
-
         showAuthMessage(
             "La contraseña debe tener al menos 6 caracteres.",
             true
         );
-
         return;
     }
 
@@ -167,7 +150,7 @@ registerButton.addEventListener("click", async function () {
 
     try {
 
-        // Comprobar si ya existe el usuario
+        // Comprobar nombre de usuario
         const {
             data: existingProfile,
             error: profileCheckError
@@ -178,7 +161,6 @@ registerButton.addEventListener("click", async function () {
             .maybeSingle();
 
         if (profileCheckError) {
-
             console.error(profileCheckError);
 
             showAuthMessage(
@@ -190,7 +172,6 @@ registerButton.addEventListener("click", async function () {
         }
 
         if (existingProfile) {
-
             showAuthMessage(
                 "Ese nombre de usuario ya existe.",
                 true
@@ -199,11 +180,7 @@ registerButton.addEventListener("click", async function () {
             return;
         }
 
-        // Crear email interno
-        const email = makeInternalEmail(username);
-
-        console.log("Creando cuenta:", email);
-
+        // Crear cuenta en Supabase Auth
         const {
             data,
             error
@@ -213,8 +190,7 @@ registerButton.addEventListener("click", async function () {
         });
 
         if (error) {
-
-            console.error("Supabase:", error);
+            console.error(error);
 
             showAuthMessage(
                 error.message,
@@ -225,11 +201,24 @@ registerButton.addEventListener("click", async function () {
         }
 
         if (!data.user) {
-
             showAuthMessage(
-                "Supabase no devolvió el usuario.",
+                "No se pudo crear la cuenta.",
                 true
             );
+
+            return;
+        }
+
+        // Si Confirm email está activado
+        if (!data.session) {
+            showAuthMessage(
+                "Cuenta creada. Revisa tu correo para confirmar la cuenta.",
+                false
+            );
+
+            registerEmail.value = "";
+            registerUsername.value = "";
+            registerPassword.value = "";
 
             return;
         }
@@ -245,26 +234,10 @@ registerButton.addEventListener("click", async function () {
             });
 
         if (profileError) {
-
-            console.error(
-                "Error creando perfil:",
-                profileError
-            );
+            console.error(profileError);
 
             showAuthMessage(
-                "La cuenta se creó, pero hubo un error creando el perfil.",
-                true
-            );
-
-            return;
-        }
-
-        // Si Supabase no devuelve sesión,
-        // probablemente está activado Confirm email.
-        if (!data.session) {
-
-            showAuthMessage(
-                "Cuenta creada, pero debes desactivar 'Confirm email' en Supabase.",
+                "La cuenta se creó, pero no se pudo crear el perfil.",
                 true
             );
 
@@ -280,6 +253,10 @@ registerButton.addEventListener("click", async function () {
 
         authScreen.classList.add("hidden");
         app.classList.remove("hidden");
+
+        registerEmail.value = "";
+        registerUsername.value = "";
+        registerPassword.value = "";
 
         await loadChats();
 
@@ -303,33 +280,26 @@ registerButton.addEventListener("click", async function () {
 // INICIAR SESIÓN
 // ========================================
 
-loginButton.addEventListener("click", async function () {
+loginButton.addEventListener("click", async () => {
 
-    const username = loginUsername.value
-        .trim()
-        .toLowerCase();
-
+    const email = loginEmail.value.trim();
     const password = loginPassword.value;
 
     showAuthMessage("");
 
-    if (!validUsername(username)) {
-
+    if (!email) {
         showAuthMessage(
-            "Usuario inválido.",
+            "Escribe tu correo electrónico.",
             true
         );
-
         return;
     }
 
     if (!password) {
-
         showAuthMessage(
             "Escribe tu contraseña.",
             true
         );
-
         return;
     }
 
@@ -337,8 +307,6 @@ loginButton.addEventListener("click", async function () {
     loginButton.textContent = "Entrando...";
 
     try {
-
-        const email = makeInternalEmail(username);
 
         const {
             data,
@@ -349,11 +317,10 @@ loginButton.addEventListener("click", async function () {
         });
 
         if (error) {
-
             console.error(error);
 
             showAuthMessage(
-                "Usuario o contraseña incorrectos.",
+                "Correo o contraseña incorrectos.",
                 true
             );
 
@@ -365,7 +332,6 @@ loginButton.addEventListener("click", async function () {
         await loadCurrentProfile();
 
         if (!currentProfile) {
-
             showAuthMessage(
                 "No se encontró el perfil.",
                 true
@@ -379,6 +345,9 @@ loginButton.addEventListener("click", async function () {
 
         authScreen.classList.add("hidden");
         app.classList.remove("hidden");
+
+        loginEmail.value = "";
+        loginPassword.value = "";
 
         await loadChats();
 
@@ -418,12 +387,10 @@ async function loadCurrentProfile() {
         .single();
 
     if (error) {
-
         console.error(
             "Error cargando perfil:",
             error
         );
-
         return;
     }
 
@@ -434,10 +401,9 @@ async function loadCurrentProfile() {
 // CERRAR SESIÓN
 // ========================================
 
-logoutButton.addEventListener("click", async function () {
+logoutButton.addEventListener("click", async () => {
 
     if (realtimeChannel) {
-
         await db.removeChannel(
             realtimeChannel
         );
@@ -454,17 +420,20 @@ logoutButton.addEventListener("click", async function () {
     app.classList.add("hidden");
     authScreen.classList.remove("hidden");
 
-    loginUsername.value = "";
+    loginEmail.value = "";
     loginPassword.value = "";
 
-    showLoginScreen();
+    loginForm.classList.remove("hidden");
+    registerForm.classList.add("hidden");
+
+    showAuthMessage("");
 });
 
 // ========================================
 // BUSCAR USUARIOS
 // ========================================
 
-userSearch.addEventListener("input", async function () {
+userSearch.addEventListener("input", async () => {
 
     const search = userSearch.value
         .trim()
@@ -473,9 +442,7 @@ userSearch.addEventListener("input", async function () {
     searchResults.innerHTML = "";
 
     if (!search) {
-
         searchResults.classList.add("hidden");
-
         return;
     }
 
@@ -484,7 +451,9 @@ userSearch.addEventListener("input", async function () {
         error
     } = await db
         .from("profiles")
-        .select("id, username, avatar_url")
+        .select(
+            "id, username, avatar_url"
+        )
         .ilike(
             "username",
             "%" + search + "%"
@@ -496,9 +465,7 @@ userSearch.addEventListener("input", async function () {
         .limit(20);
 
     if (error) {
-
         console.error(error);
-
         return;
     }
 
@@ -515,12 +482,13 @@ userSearch.addEventListener("input", async function () {
         return;
     }
 
-    data.forEach(function (user) {
+    data.forEach(user => {
 
         const element =
             document.createElement("div");
 
-        element.className = "user-result";
+        element.className =
+            "user-result";
 
         element.innerHTML = `
             <div class="avatar">
@@ -538,20 +506,22 @@ userSearch.addEventListener("input", async function () {
 
         element.addEventListener(
             "click",
-            function () {
-
+            () => {
                 createPrivateConversation(
                     user.id,
                     user.username
                 );
-
             }
         );
 
-        searchResults.appendChild(element);
+        searchResults.appendChild(
+            element
+        );
     });
 
-    searchResults.classList.remove("hidden");
+    searchResults.classList.remove(
+        "hidden"
+    );
 });
 
 // ========================================
@@ -563,7 +533,10 @@ async function createPrivateConversation(
     otherUsername
 ) {
 
-    searchResults.classList.add("hidden");
+    searchResults.classList.add(
+        "hidden"
+    );
+
     userSearch.value = "";
 
     try {
@@ -580,7 +553,6 @@ async function createPrivateConversation(
             );
 
         if (error) {
-
             console.error(error);
 
             alert(
@@ -592,10 +564,11 @@ async function createPrivateConversation(
 
         const conversationIds =
             memberships.map(
-                m => m.conversation_id
+                item =>
+                    item.conversation_id
             );
 
-        // Buscar chat existente
+        // Buscar conversación existente
         for (
             const conversationId
             of conversationIds
@@ -611,18 +584,20 @@ async function createPrivateConversation(
                     conversationId
                 );
 
-            if (!members) continue;
+            if (!members) {
+                continue;
+            }
 
             if (
                 members.length === 2 &&
                 members.some(
-                    m =>
-                        m.user_id ===
+                    member =>
+                        member.user_id ===
                         currentUser.id
                 ) &&
                 members.some(
-                    m =>
-                        m.user_id ===
+                    member =>
+                        member.user_id ===
                         otherUserId
                 )
             ) {
@@ -678,7 +653,6 @@ async function createPrivateConversation(
                     user_id:
                         currentUser.id
                 },
-
                 {
                     conversation_id:
                         conversation.id,
@@ -788,18 +762,16 @@ async function loadChats() {
             );
 
         if (membersError) {
-
             console.error(
                 membersError
             );
-
             continue;
         }
 
         const other =
             members.find(
-                m =>
-                    m.user_id !==
+                member =>
+                    member.user_id !==
                     currentUser.id
             );
 
@@ -827,7 +799,8 @@ async function loadChats() {
         const item =
             document.createElement("div");
 
-        item.className = "chat-item";
+        item.className =
+            "chat-item";
 
         item.innerHTML = `
             <div class="avatar">
@@ -855,13 +828,11 @@ async function loadChats() {
 
         item.addEventListener(
             "click",
-            function () {
-
+            () => {
                 openConversation(
                     conversationId,
                     profile.username
                 );
-
             }
         );
 
@@ -870,7 +841,7 @@ async function loadChats() {
 }
 
 // ========================================
-// ABRIR CHAT
+// ABRIR CONVERSACIÓN
 // ========================================
 
 async function openConversation(
@@ -887,8 +858,13 @@ async function openConversation(
     chatStatus.textContent =
         "en línea";
 
-    welcome.classList.add("hidden");
-    chatWindow.classList.remove("hidden");
+    welcome.classList.add(
+        "hidden"
+    );
+
+    chatWindow.classList.remove(
+        "hidden"
+    );
 
     messages.innerHTML = "";
 
@@ -927,15 +903,16 @@ async function loadMessages() {
         );
 
     if (error) {
-
         console.error(error);
-
         return;
     }
 
     messages.innerHTML = "";
 
-    if (!data || data.length === 0) {
+    if (
+        !data ||
+        data.length === 0
+    ) {
 
         messages.innerHTML = `
             <div class="empty">
@@ -947,7 +924,8 @@ async function loadMessages() {
     }
 
     data.forEach(
-        message => renderMessage(message)
+        message =>
+            renderMessage(message)
     );
 
     scrollMessages();
@@ -1129,12 +1107,12 @@ sendButton.addEventListener(
 );
 
 // ========================================
-// ENTER PARA ENVIAR
+// ENTER
 // ========================================
 
 messageInput.addEventListener(
     "keydown",
-    function (event) {
+    event => {
 
         if (
             event.key === "Enter"
@@ -1153,8 +1131,7 @@ messageInput.addEventListener(
 
 imageButton.addEventListener(
     "click",
-    function () {
-
+    () => {
         imageInput.click();
     }
 );
@@ -1165,7 +1142,7 @@ imageButton.addEventListener(
 
 imageInput.addEventListener(
     "change",
-    async function () {
+    async () => {
 
         const file =
             imageInput.files[0];
@@ -1321,7 +1298,7 @@ function subscribeToMessages() {
                         "conversation_id=eq." +
                         currentConversation
                 },
-                function (payload) {
+                payload => {
 
                     const alreadyExists =
                         document.querySelector(
@@ -1344,7 +1321,7 @@ function subscribeToMessages() {
 }
 
 // ========================================
-// SESIÓN EXISTENTE
+// COMPROBAR SESIÓN
 // ========================================
 
 async function checkSession() {
@@ -1378,39 +1355,46 @@ async function checkSession() {
                 currentProfile.username;
         }
 
-        authScreen.classList.add("hidden");
-        app.classList.remove("hidden");
+        authScreen.classList.add(
+            "hidden"
+        );
+
+        app.classList.remove(
+            "hidden"
+        );
 
         await loadChats();
 
     } else {
 
-        authScreen.classList.remove("hidden");
-        app.classList.add("hidden");
+        authScreen.classList.remove(
+            "hidden"
+        );
+
+        app.classList.add(
+            "hidden"
+        );
     }
 }
 
 // ========================================
-// CAMBIOS DE SESIÓN
+// CAMBIOS DE AUTENTICACIÓN
 // ========================================
 
 db.auth.onAuthStateChange(
-    async function (event, session) {
+    (event, session) => {
 
         if (session?.user) {
-
             currentUser =
                 session.user;
-
         } else {
-
             currentUser = null;
         }
     }
 );
 
 // ========================================
-// INICIAR CHAT
+// INICIAR
 // ========================================
 
 checkSession();
