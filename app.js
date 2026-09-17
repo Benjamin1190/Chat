@@ -298,7 +298,7 @@ function showWelcome() {
 
 
 /* =====================================================
-   CAMBIAR LOGIN / REGISTRO
+   LOGIN / REGISTRO
 ===================================================== */
 
 if (showRegisterButton) {
@@ -414,23 +414,26 @@ async function register() {
             account.user.uid
         );
 
+
         console.log(
-            "Usuario actual:",
-            auth.currentUser?.uid
+            "PASO 3: guardando perfil en Firestore..."
         );
 
 
-        if (!auth.currentUser) {
+        const userData = {
 
-            throw new Error(
-                "Firebase Authentication dice que no hay usuario conectado."
-            );
-        }
+            username:
+                username,
 
+            usernameLower:
+                usernameLower,
 
-        console.log(
-            "PASO 3: creando users/UID..."
-        );
+            email:
+                email,
+
+            createdAt:
+                serverTimestamp()
+        };
 
 
         await setDoc(
@@ -439,28 +442,63 @@ async function register() {
                 "users",
                 account.user.uid
             ),
-            {
-                username: username,
-                usernameLower: usernameLower,
-                email: email,
-                createdAt: serverTimestamp()
-            }
+            userData
         );
 
 
         console.log(
-            "PASO 4: users/UID creado correctamente"
+            "PASO 4: perfil guardado correctamente"
+        );
+
+
+        const savedProfile =
+            await getDoc(
+                doc(
+                    db,
+                    "users",
+                    account.user.uid
+                )
+            );
+
+
+        if (!savedProfile.exists()) {
+
+            throw new Error(
+                "El perfil no existe después de guardarlo."
+            );
+        }
+
+
+        console.log(
+            "PASO 5: perfil verificado"
+        );
+
+        console.log(
+            savedProfile.data()
+        );
+
+
+        currentUser =
+            account.user;
+
+
+        currentProfile =
+            savedProfile.data();
+
+
+        if (registerForm) {
+            registerForm.reset();
+        }
+
+
+        await initializeAuthenticatedUser(
+            account.user
         );
 
 
         alert(
             "Cuenta creada correctamente."
         );
-
-
-        if (registerForm) {
-            registerForm.reset();
-        }
 
 
     } catch (error) {
@@ -502,7 +540,7 @@ async function register() {
 
 
 /* =====================================================
-   INICIAR SESIÓN
+   LOGIN
 ===================================================== */
 
 async function login() {
@@ -579,7 +617,7 @@ if (registerForm) {
 
 
 /* =====================================================
-   INICIALIZAR USUARIO AUTENTICADO
+   INICIALIZAR USUARIO
 ===================================================== */
 
 async function initializeAuthenticatedUser(user) {
@@ -589,7 +627,8 @@ async function initializeAuthenticatedUser(user) {
     }
 
 
-    currentUser = user;
+    currentUser =
+        user;
 
 
     const profileSnapshot =
@@ -610,7 +649,7 @@ async function initializeAuthenticatedUser(user) {
         );
 
         alert(
-            "Tu cuenta de Firebase existe, pero no se encontró tu perfil en Firestore."
+            "Tu cuenta existe, pero no se encontró tu perfil."
         );
 
         return;
@@ -619,6 +658,12 @@ async function initializeAuthenticatedUser(user) {
 
     currentProfile =
         profileSnapshot.data();
+
+
+    console.log(
+        "PERFIL CARGADO:",
+        currentProfile
+    );
 
 
     if (currentUsername) {
@@ -669,6 +714,7 @@ onAuthStateChanged(
 
 
             currentUser = null;
+
             currentProfile = null;
 
 
@@ -702,7 +748,10 @@ onAuthStateChanged(
 
         } catch (error) {
 
-            console.error(error);
+            console.error(
+                "ERROR AL INICIALIZAR:",
+                error
+            );
 
             alert(
                 "Error de Firebase:\n\n" +
@@ -722,7 +771,7 @@ onAuthStateChanged(
 
 
 /* =====================================================
-   ADMIN BUTTON
+   ADMIN
 ===================================================== */
 
 function updateAdminButton() {
@@ -754,7 +803,7 @@ function updateAdminButton() {
 
 
 /* =====================================================
-   CERRAR SESIÓN
+   LOGOUT
 ===================================================== */
 
 if (logoutButton) {
@@ -797,7 +846,7 @@ if (logoutButton) {
 
 
 /* =====================================================
-   CARGAR PERSONAS
+   USUARIOS
 ===================================================== */
 
 async function loadUsers() {
@@ -833,7 +882,9 @@ async function loadUsers() {
 
 
                 usersCache.push({
-                    uid: item.id,
+                    uid:
+                        item.id,
+
                     ...item.data()
                 });
             }
@@ -871,10 +922,6 @@ async function loadUsers() {
     }
 }
 
-
-/* =====================================================
-   MOSTRAR PERSONAS
-===================================================== */
 
 function showPeople(search) {
 
@@ -997,9 +1044,11 @@ function showPeople(search) {
 
 
             info.appendChild(name);
+
             info.appendChild(email);
 
             button.appendChild(avatar);
+
             button.appendChild(info);
 
 
@@ -1059,7 +1108,7 @@ if (userSearch) {
 
 
 /* =====================================================
-   CHAT INDIVIDUAL
+   CHAT PRIVADO
 ===================================================== */
 
 async function openUserChat(user) {
@@ -1096,6 +1145,7 @@ async function openUserChat(user) {
             user
         );
 
+
     } catch (error) {
 
         console.error(error);
@@ -1109,10 +1159,6 @@ async function openUserChat(user) {
     }
 }
 
-
-/* =====================================================
-   BUSCAR CHAT EXISTENTE
-===================================================== */
 
 async function findOrCreateChat(otherUid) {
 
@@ -1175,10 +1221,18 @@ async function findOrCreateChat(otherUid) {
                     currentUser.uid,
                     otherUid
                 ],
-                isGroup: false,
-                createdAt: serverTimestamp(),
-                lastMessage: "",
-                lastMessageAt: serverTimestamp()
+
+                isGroup:
+                    false,
+
+                createdAt:
+                    serverTimestamp(),
+
+                lastMessage:
+                    "",
+
+                lastMessageAt:
+                    serverTimestamp()
             }
         );
 
@@ -1504,7 +1558,7 @@ function showMessage(data) {
 
 
 /* =====================================================
-   SELECCIONAR IMAGEN
+   IMÁGENES
 ===================================================== */
 
 if (attachButton) {
@@ -1699,8 +1753,11 @@ async function sendMessage() {
                         path,
                         pendingImageFile,
                         {
-                            cacheControl: "3600",
-                            upsert: false
+                            cacheControl:
+                                "3600",
+
+                            upsert:
+                                false
                         }
                     );
 
@@ -1723,11 +1780,14 @@ async function sendMessage() {
 
 
             imageUrl =
-                publicUrlResult.data.publicUrl;
+                publicUrlResult
+                    .data
+                    .publicUrl;
         }
 
 
         const messageData = {
+
             senderId:
                 currentUser.uid,
 
@@ -1776,7 +1836,8 @@ async function sendMessage() {
                     serverTimestamp()
             },
             {
-                merge: true
+                merge:
+                    true
             }
         );
 
@@ -2042,10 +2103,6 @@ function loadConversations() {
 }
 
 
-/* =====================================================
-   ITEM CHAT
-===================================================== */
-
 function createChatItem(
     id,
     data,
@@ -2103,9 +2160,11 @@ function createChatItem(
 
 
     info.appendChild(name);
+
     info.appendChild(last);
 
     button.appendChild(avatar);
+
     button.appendChild(info);
 
 
@@ -2125,10 +2184,6 @@ function createChatItem(
     return button;
 }
 
-
-/* =====================================================
-   ITEM GRUPO
-===================================================== */
 
 function createGroupChatItem(
     id,
@@ -2178,9 +2233,11 @@ function createGroupChatItem(
 
 
     info.appendChild(name);
+
     info.appendChild(last);
 
     button.appendChild(avatar);
+
     button.appendChild(info);
 
 
@@ -2274,7 +2331,7 @@ if (deleteChatButton) {
 
 
 /* =====================================================
-   CREAR GRUPO
+   GRUPOS
 ===================================================== */
 
 if (createGroupButton) {
@@ -2450,6 +2507,7 @@ async function createGroup() {
 
     const members = [
         currentUser.uid,
+
         ...checked.map(
             function (checkbox) {
 
@@ -2603,10 +2661,6 @@ if (adminSearch) {
 }
 
 
-/* =====================================================
-   ADMIN - USUARIOS
-===================================================== */
-
 async function loadAdminUsers() {
 
     if (!adminUsers) {
@@ -2700,10 +2754,6 @@ async function loadAdminUsers() {
     }
 }
 
-
-/* =====================================================
-   ADMIN - LISTA
-===================================================== */
 
 function renderAdminUsers() {
 
@@ -2799,6 +2849,7 @@ function renderAdminUsers() {
 
 
             button.appendChild(name);
+
             button.appendChild(email);
 
 
@@ -2820,10 +2871,6 @@ function renderAdminUsers() {
     );
 }
 
-
-/* =====================================================
-   ADMIN - DETALLES
-===================================================== */
 
 async function showAdminDetails(user) {
 
@@ -2891,10 +2938,6 @@ async function showAdminDetails(user) {
     );
 }
 
-
-/* =====================================================
-   ADMIN - HISTORIAL
-===================================================== */
 
 async function loadAdminHistory(uid) {
 
